@@ -11,7 +11,7 @@ STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
             cheats.o zip.o cpu_threaded.z cpu_speed.o cpuctrl.o               \
             gp2xminilib.o font.o display.o speedtest.o cmdline.o daemon.o     \
-            arm_stub.o video_blend.o
+            arm_stub.o video_blend.o flush_cache.o
 BIN       = gpsp.gpe 
 
 # Platform specific definitions 

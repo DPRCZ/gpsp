@@ -93,6 +93,7 @@ SDL_Surface *hw_screen;
 #endif
 SDL_Surface *screen;
 const u32 video_scale = 1;
+extern void gp2x_flush_cache(void *beginning_addr, void *end_addr, int flags);
 
 #define get_screen_pixels()                                                   \
   ((u16 *)screen->pixels)                                                     \
@@ -3409,6 +3410,9 @@ void flip_screen()
     {
       SDL_BlitSurface(screen, NULL, hw_screen, NULL);
     }
+    /* it is unclear if this syscall takes virtual or physical addresses,
+     * but using virtual seems to work for me. */
+    gp2x_flush_cache(hw_screen->pixels, hw_screen->pixels + 320*240, 0);
   }
 #else
   SDL_Flip(screen);

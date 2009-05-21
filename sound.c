@@ -579,13 +579,13 @@ void update_gbc_sound(u32 cpu_ticks)
 
   address16(io_registers, 0x84) = sound_status;
 
-  SDL_CondSignal(sound_cv);
-
-  SDL_UnlockMutex(sound_mutex);
-
   gbc_sound_last_cpu_ticks = cpu_ticks;
   gbc_sound_buffer_index =
    (gbc_sound_buffer_index + (buffer_ticks * 2)) % BUFFER_SIZE;
+
+  SDL_UnlockMutex(sound_mutex);
+
+  SDL_CondSignal(sound_cv);
 }
 
 #define sound_copy_normal()                                                   \

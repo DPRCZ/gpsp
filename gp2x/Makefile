@@ -22,8 +22,8 @@ CFLAGS     += -DARM_ARCH -DGP2X_BUILD
 CFLAGS     += -O3 -std=c99 -msoft-float -funsigned-char -fno-common           \
               -fno-builtin                                                    \
 
-INCLUDES   = `$(PREFIX)/bin/arm-open2x-linux-sdl-config --cflags` 
-LIBS       = `$(PREFIX)/bin/arm-open2x-linux-sdl-config --libs`               \
+INCLUDES   = `$(PREFIX)/bin/sdl-config --cflags` -I$(PREFIX)/include
+LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
               -lm -ldl -lpthread -lz -static
 
 # Compilation:

@@ -513,7 +513,7 @@ u32 update_input()
 {
   static u32 rapidfire_flag = 1;
   static u32 last_buttons;
-  u32 non_repeat_buttons;
+  u32 handled_buttons;
   u32 button_id;
   u32 new_key = 0;
   u32 buttons = gpsp_gp2x_joystick_read();
@@ -525,12 +525,12 @@ u32 update_input()
     buttons |= GP2X_VOL_MIDDLE;
   }
 
-  non_repeat_buttons = (last_buttons ^ buttons) & buttons;
+  handled_buttons = ((last_buttons ^ buttons) | GP2X_VOL_DOWN | GP2X_VOL_UP) & buttons;
   last_buttons = buttons;
 
   for(i = 0; i < 16; i++)
   {
-    if(non_repeat_buttons & button_gp2x_mask_to_config[i])
+    if(handled_buttons & button_gp2x_mask_to_config[i])
       button_id = gamepad_config_map[i];
     else
       button_id = BUTTON_ID_NONE;

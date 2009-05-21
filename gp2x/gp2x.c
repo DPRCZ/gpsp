@@ -28,12 +28,13 @@
 extern int main_cpuspeed(int argc, char *argv[]);
 extern SDL_Surface* screen;
 
-u32 gp2x_audio_volume = 74;
+u32 gp2x_audio_volume = 74/2;
 u32 gpsp_gp2x_dev_audio = 0;
 u32 gpsp_gp2x_dev = 0;
 
 volatile u16 *gpsp_gp2x_memregs;
 volatile u32 *gpsp_gp2x_memregl;
+extern unsigned short *gp2x_memregs;
 
 static volatile u16 *MEM_REG;
 
@@ -64,7 +65,9 @@ void gp2x_overclock()
   gpsp_gp2x_memregs = (unsigned short *)gpsp_gp2x_memregl;
 
   clear_screen(0);
-  main_cpuspeed(0, NULL);
+//  main_cpuspeed(0, NULL);
+  gp2x_memregs = (void *)gpsp_gp2x_memregs;
+  cpuctrl_init();
   gp2x_sound_volume(1);
 }
 
@@ -73,6 +76,7 @@ void gp2x_quit()
   munmap((void *)gpsp_gp2x_memregl, 0x10000);
   close(gpsp_gp2x_dev_audio);
   close(gpsp_gp2x_dev);
+
   chdir("/usr/gp2x");
   execl("gp2xmenu", "gp2xmenu", NULL);
 }

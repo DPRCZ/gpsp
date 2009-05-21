@@ -84,7 +84,11 @@ u32 oam_update_count = 0;
 u32 synchronize_flag = 1;
 
 u32 update_backup_flag = 1;
+#ifdef GP2X_BUILD
+u32 clock_speed = 200;
+#else
 u32 clock_speed = 333;
+#endif
 u8 main_path[512];
 
 void trigger_ext_event();
@@ -351,7 +355,7 @@ int main(int argc, char *argv[])
    current_savestate_filename);
   load_state(current_savestate_filename); */
 
-  debug_on();
+//  debug_on();
 
   if(argc > 2)
   {
@@ -1008,7 +1012,8 @@ void get_ticks_us(u64 *ticks_return)
 
 void delay_us(u32 us_count)
 {
-  usleep(us_count);
+  //usleep(us_count);
+  SDL_Delay(us_count / 1000);
 }
 
 void get_ticks_us(u64 *ticks_return)

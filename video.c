@@ -3406,6 +3406,13 @@ void flip_screen()
       SDL_Rect drect = {40, 40, 240, 160};
       SDL_BlitSurface(screen, &srect, hw_screen, &drect);
     }
+    else if((screen_scale == scaled_aspect) &&
+     (resolution_width == small_resolution_width) &&
+     (resolution_height == small_resolution_height))
+    {
+      SDL_Rect drect = {0, 10, 0, 0};
+      SDL_BlitSurface(screen, NULL, hw_screen, &drect);
+    }
     else
     {
       SDL_BlitSurface(screen, NULL, hw_screen, NULL);
@@ -3673,11 +3680,18 @@ void video_resolution_small()
   current_scale = screen_scale;
 
 #ifdef GP2X_BUILD
+  int w, h;
   SDL_FreeSurface(screen);
   SDL_GP2X_AllowGfxMemory(NULL, 0);
-  hw_screen = SDL_SetVideoMode((screen_scale == unscaled ? 320 :
-   small_resolution_width * video_scale), (screen_scale == unscaled ? 320 :
-   small_resolution_height * video_scale), 16, SDL_HWSURFACE);
+
+  w = 320; h = 240;
+  if (screen_scale != unscaled)
+  {
+    w = small_resolution_width * video_scale;
+    h = small_resolution_height * video_scale;
+  }
+  if (screen_scale == scaled_aspect) h += 20;
+  hw_screen = SDL_SetVideoMode(w, h, 16, SDL_HWSURFACE);
 
   screen = SDL_CreateRGBSurface(SDL_HWSURFACE,
    small_resolution_width * video_scale, small_resolution_height *
@@ -3768,7 +3782,7 @@ void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
 
 
   /* EDIT */
-  if(y + FONT_HEIGHT >= resolution_height)
+  if(y + FONT_HEIGHT > resolution_height)
       return;
 
   while(current_char)
@@ -3812,8 +3826,13 @@ void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
       str_index++;
     }
 
-    if(current_x + FONT_WIDTH >= resolution_width /* EDIT */)
-      break;
+    if(current_x + FONT_WIDTH > resolution_width /* EDIT */)
+    {
+      while (current_char && current_char != '\n')
+      {
+        current_char = str[str_index++];
+      }
+    }
   }
 }
 
@@ -3923,7 +3942,8 @@ void debug_screen_printl(const char *format, ...)
 
   va_start(ap, format);
   debug_screen_printf(format, ap);
-  debug_screen_printf("\n");
+  debug_screen_newline(1);
+//  debug_screen_printf("\n");
   va_end(ap);
 }
 

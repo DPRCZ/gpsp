@@ -12,6 +12,23 @@ not apply however).
 
 Changelog:
 
+0.9-2xb u1 (unofficial notaz release):
+- Fixed a problen in thread synchronization which caused deadlock after
+  some time.
+
+0.9-2xb u2 (unofficial notaz release):
+- Replaced non-working mmuhack.o with proper one, added cache flush calls
+  to avoid artifacts.
+
+0.9-2xb u3 (unofficial notaz release, released with permission):
+- Removed built-in CPU/LCD/RAM-Tweaker.
+- Improved usability of volume control.
+- Removed PSP-specific GUI options, adjusted help text.
+- Overclocking from menu now works, keep it at 200 if you don't want that
+  (if you want to overclock using launcher, for example).
+- Fixed centering-on-first-run problem.
+- 3:2 scaled option now does what it says.
+
 0.9-2xb: 
 -- IMPORTANT-- If you're overwriting an old version, be sure to delete the
    gpsp.cfg file first, or be prepared to have a bunch of weird button

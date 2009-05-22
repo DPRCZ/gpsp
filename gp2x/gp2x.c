@@ -34,7 +34,7 @@ u32 gpsp_gp2x_dev = 0;
 
 volatile u16 *gpsp_gp2x_memregs;
 volatile u32 *gpsp_gp2x_memregl;
-extern unsigned short *gp2x_memregs;
+unsigned short *gp2x_memregs;
 
 static volatile u16 *MEM_REG;
 

@@ -9,8 +9,7 @@ CC        = $(PREFIX)/bin/arm-open2x-linux-gcc
 STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
 
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
-            cheats.o zip.o cpu_threaded.z cpu_speed.o cpuctrl.o               \
-            gp2xminilib.o font.o display.o speedtest.o cmdline.o daemon.o     \
+            cheats.o zip.o cpu_threaded.z cpuctrl_mmsp2.o                     \
             arm_stub.o video_blend.o flush_cache.o
 BIN       = gpsp.gpe 
 

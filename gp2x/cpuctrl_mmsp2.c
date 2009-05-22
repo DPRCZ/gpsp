@@ -25,16 +25,16 @@
 // CPU CONTROL
 /****************************************************************************************************************************************/
 
-#include <sys/mman.h>
+//#include <sys/mman.h>
 #include <math.h>
 #include <stdio.h>
-#include "gp2xminilib.h"
+//#include "gp2xminilib.h"
 
 #define SYS_CLK_FREQ 7372800
 
 //from minimal library rlyeh
 
-extern unsigned long   gp2x_dev[4];
+//extern unsigned long   gp2x_dev[4];
 extern unsigned short *gp2x_memregs;
 
 // system registers
@@ -117,6 +117,7 @@ unsigned get_FCLK()
 	return MEM_REG[0x910>>1];
 }
 
+#if 0
 void set_add_FLCDCLK(int addclock)
 {
 	//Set LCD controller to use FPLL
@@ -320,6 +321,7 @@ void clock_940_on()
 {
 	MEM_REG[0x904>>1]|=1;
 }
+#endif
 
 
 //--------------

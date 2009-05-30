@@ -88,8 +88,13 @@ static void Ge_Finish_Callback(int id, void *arg)
 #else
 
 #ifdef GP2X_BUILD
-#include "SDL_gp2x.h"
-SDL_Surface *hw_screen;
+ #ifdef WIZ_BUILD
+  static void SDL_GP2X_AllowGfxMemory() {}
+  #include <SDL.h>
+ #else
+  #include "SDL_gp2x.h"
+ #endif
+ SDL_Surface *hw_screen;
 #endif
 SDL_Surface *screen;
 const u32 video_scale = 1;

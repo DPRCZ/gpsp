@@ -15,16 +15,20 @@ enum
   GP2X_B        = 1 << 13,
   GP2X_X        = 1 << 14,
   GP2X_Y        = 1 << 15,
+#ifdef WIZ_BUILD
+  GP2X_VOL_UP   = 1 << 16,
+  GP2X_VOL_DOWN = 1 << 17,
+  GP2X_PUSH     = 1 << 18,
+#else
   GP2X_VOL_DOWN = 1 << 22,
   GP2X_VOL_UP   = 1 << 23,
-  GP2X_PUSH     = 1 << 27
+  GP2X_PUSH     = 1 << 27,
+#endif
 };
 
 
 extern u32 gpsp_gp2x_dev_audio;
 extern u32 gpsp_gp2x_dev;
-extern volatile u16 *gpsp_gp2x_memregs;
-extern volatile u32 *gpsp_gp2x_memregl;
 
 void gp2x_sound_volume(u32 volume_up);
 void gp2x_quit();

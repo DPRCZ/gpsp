@@ -49,6 +49,7 @@ u64 frame_count_initial_timestamp = 0;
 u64 last_frame_interval_timestamp;
 u32 gp2x_fps_debug = 0;
 
+void gp2x_init(void);
 void gp2x_quit(void);
 #else
 
@@ -194,14 +195,14 @@ int main(int argc, char *argv[])
 
 #ifdef GP2X_BUILD
   if(gp2x_load_mmuhack() == -1)
-    delay_us(2500000);
+;//    delay_us(2500000);
 #endif
 
 #ifdef PSP_BUILD
   sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 0,
    vblank_interrupt_handler, NULL);
   sceKernelEnableSubIntr(PSP_VBLANK_INT, 0);
-#else
+#elif !defined(GP2X_BUILD)
   freopen("CON", "wb", stdout);
 #endif
 
@@ -229,7 +230,7 @@ int main(int argc, char *argv[])
 
 #ifdef GP2X_BUILD
   // Overclocking GP2X and MMU patch goes here
-  gp2x_overclock();
+  gp2x_init();
 #endif
 
 #ifdef GP2X_BUILD

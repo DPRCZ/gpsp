@@ -24,6 +24,7 @@
 #include <sys/soundcard.h>
 #include "../common.h"
 #include "gp2x.h"
+#include "warm.h"
 
 extern int main_cpuspeed(int argc, char *argv[]);
 extern SDL_Surface* screen;
@@ -31,9 +32,10 @@ extern SDL_Surface* screen;
 u32 gp2x_audio_volume = 74/2;
 u32 gpsp_gp2x_dev_audio = 0;
 u32 gpsp_gp2x_dev = 0;
+u32 gpsp_gp2x_gpiodev = 0;
 
-volatile u16 *gpsp_gp2x_memregs;
-volatile u32 *gpsp_gp2x_memregl;
+static volatile u16 *gpsp_gp2x_memregs;
+static volatile u32 *gpsp_gp2x_memregl;
 unsigned short *gp2x_memregs;
 
 static volatile u16 *MEM_REG;
@@ -55,7 +57,7 @@ s32 gp2x_load_mmuhack()
   return 0;
 }
 
-void gp2x_overclock()
+void gp2x_init()
 {
   gpsp_gp2x_dev = open("/dev/mem",   O_RDWR);
   gpsp_gp2x_dev_audio = open("/dev/mixer", O_RDWR);
@@ -63,6 +65,10 @@ void gp2x_overclock()
    (unsigned long  *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,
    gpsp_gp2x_dev, 0xc0000000);
   gpsp_gp2x_memregs = (unsigned short *)gpsp_gp2x_memregl;
+#ifdef WIZ_BUILD
+  gpsp_gp2x_gpiodev = open("/dev/GPIO", O_RDONLY);
+#endif
+  warm_init();
 
   clear_screen(0);
 //  main_cpuspeed(0, NULL);
@@ -76,9 +82,13 @@ void gp2x_quit()
   munmap((void *)gpsp_gp2x_memregl, 0x10000);
   close(gpsp_gp2x_dev_audio);
   close(gpsp_gp2x_dev);
+#ifdef WIZ_BUILD
+  close(gpsp_gp2x_gpiodev);
+#endif
 
-  chdir("/usr/gp2x");
-  execl("gp2xmenu", "gp2xmenu", NULL);
+  //chdir("/usr/gp2x");
+  //execl("gp2xmenu", "gp2xmenu", NULL);
+  exit(0);
 }
 
 void gp2x_sound_volume(u32 volume_up)
@@ -94,4 +104,45 @@ void gp2x_sound_volume(u32 volume_up)
   volume = (gp2x_audio_volume << 8) | gp2x_audio_volume;
   ioctl(gpsp_gp2x_dev_audio, SOUND_MIXER_WRITE_PCM, &volume);
 }
+
+u32 gpsp_gp2x_joystick_read(void)
+{
+#ifdef WIZ_BUILD
+  u32 value = 0;
+  read(gpsp_gp2x_gpiodev, &value, 4);
+  if(value & 0x02)
+   value |= 0x05;
+  if(value & 0x08)
+   value |= 0x14;
+  if(value & 0x20)
+   value |= 0x50;
+  if(value & 0x80)
+   value |= 0x41;
+  return value;
+#else
+  u32 value = (gpsp_gp2x_memregs[0x1198 >> 1] & 0x00FF);
+
+  if(value == 0xFD)
+   value = 0xFA;
+  if(value == 0xF7)
+   value = 0xEB;
+  if(value == 0xDF)
+   value = 0xAF;
+  if(value == 0x7F)
+   value = 0xBE;
+
+  return ~((gpsp_gp2x_memregs[0x1184 >> 1] & 0xFF00) | value |
+   (gpsp_gp2x_memregs[0x1186 >> 1] << 16));
+#endif
+}
+
+#ifdef WIZ_BUILD
+void cpuctrl_init(void)
+{
+}
+
+void set_FCLK(u32 MHZ)
+{
+}
+#endif
 

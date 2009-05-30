@@ -1281,10 +1281,15 @@ u32 menu(u16 *original_screen)
              &audio_buffer_size_number, 10,
 #endif
 
+#ifdef PSP_BUILD
      "Set the size (in bytes) of the audio buffer. Larger values may result\n"
      "in slightly better performance at the cost of latency; the lowest\n"
      "value will give the most responsive audio.\n"
      "This option requires gpSP to be restarted before it will take effect.",
+#else
+     "Set the size (in bytes) of the audio buffer.\n"
+     "This option requires gpSP restart to take effect.",
+#endif
      10),
     submenu_option(NULL, "Back", "Return to the main menu.", 12)
   };

@@ -268,8 +268,6 @@ typedef u32 fixed16_16;
   #define vprintf(format, ap)                                                 \
     vfprintf(stderr, format, ap)                                              \
 
-  void gp2x_overclock(void);
-
 //  #define STDIO_DEBUG
 #endif
 

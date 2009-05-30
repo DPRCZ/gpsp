@@ -375,23 +375,7 @@ u32 gamepad_config_map[16] =
 };
 
 extern u32 gp2x_fps_debug;
-
-u32 gpsp_gp2x_joystick_read(void)
-{
-  u32 value = (gpsp_gp2x_memregs[0x1198 >> 1] & 0x00FF);
-
-  if(value == 0xFD)
-   value = 0xFA;
-  if(value == 0xF7)
-   value = 0xEB;
-  if(value == 0xDF)
-   value = 0xAF;
-  if(value == 0x7F)
-   value = 0xBE;
-
-  return ~((gpsp_gp2x_memregs[0x1184 >> 1] & 0xFF00) | value |
-   (gpsp_gp2x_memregs[0x1186 >> 1] << 16));
-}
+extern u32 gpsp_gp2x_joystick_read(void);
 
 gui_action_type get_gui_input()
 {

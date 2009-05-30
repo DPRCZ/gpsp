@@ -4,26 +4,42 @@
 
 # Global definitions
 
+ifeq ($(WIZ),1)
+PREFIX  = /opt/arm-openwiz-linux-gnu
+CC        = $(PREFIX)/bin/arm-openwiz-linux-gnu-gcc
+STRIP     = $(PREFIX)/bin/arm-openwiz-linux-gnu-strip
+else
 PREFIX  = /opt/open2x/gcc-4.1.1-glibc-2.3.6
 CC        = $(PREFIX)/bin/arm-open2x-linux-gcc
 STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
+endif
 
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
-            cheats.o zip.o cpu_threaded.z cpuctrl_mmsp2.o                     \
-            arm_stub.o video_blend.o flush_cache.o
+            cheats.o zip.o cpu_threaded.z arm_stub.o video_blend.o            \
+            flush_cache.o warm.o sys_cacheflush.o
 BIN       = gpsp.gpe 
 
 # Platform specific definitions 
 
 VPATH      += ..
 CFLAGS     += -DARM_ARCH -DGP2X_BUILD
+ifeq ($(WIZ),1)
+CFLAGS     += -DWIZ_BUILD
+endif
 # NOTE: -funroll-loops will slow down compiling considerably
 CFLAGS     += -O3 -std=c99 -msoft-float -funsigned-char -fno-common           \
               -fno-builtin                                                    \
 
 INCLUDES   = `$(PREFIX)/bin/sdl-config --cflags` -I$(PREFIX)/include
 LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
-              -lm -ldl -lpthread -lz -static
+              -lm -ldl -lpthread -lz
+ifneq ($(WIZ),1)
+OBJS       += cpuctrl_mmsp2.o
+LIBS       += -static
+endif
+
+CFLAGS     += -ggdb
+LIBS       += -ggdb
 
 # Compilation:
 
@@ -43,7 +59,7 @@ LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
 
 all:	$(OBJS)
 	$(CC) $(OBJS) $(LIBS) -o $(BIN)  
-	$(STRIP) $(BIN)
+#	$(STRIP) $(BIN)
 
 clean:
 	rm -f *.o *.u *.z $(BIN) 

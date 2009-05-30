@@ -996,17 +996,25 @@ step_debug_arm:
   restore_flags()
   add pc, lr, #4                          @ return, skipping PC
 
-invalidate_icache_region:
-  mov r2, #0x0
-  swi 0x9f0002
 
-  bx lr
+#include "warm.h"
+
+invalidate_icache_region:
+  mov r2,r1
+  mov r1,r0
+  mov r0,#WOP_I_INVALIDATE
+  b warm_cache_op_range
 
 invalidate_cache_region:
-  mov r2, #0x1
-  swi 0x9f0002
+  sub r2,r1,r0
+  mov r1,r0
+  mov r0,#(WOP_D_CLEAN|WOP_I_INVALIDATE)
+  b warm_cache_op_range
 
-  bx lr
+@  mov r2, #0
+@  swi 0x9f0002
+
+@  bx lr
 
 
 .comm memory_map_read 0x8000

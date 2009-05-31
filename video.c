@@ -85,16 +85,23 @@ static void Ge_Finish_Callback(int id, void *arg)
 #define get_screen_pitch()                                                    \
   screen_pitch                                                                \
 
+#elif defined(WIZ_BUILD)
+
+static u32 screen_offset = 0;
+static u16 *screen_pixels = NULL;
+const u32 screen_pitch = 320;
+
+#define get_screen_pixels()                                                   \
+  screen_pixels                                                               \
+
+#define get_screen_pitch()                                                    \
+  screen_pitch                                                                \
+
 #else
 
 #ifdef GP2X_BUILD
- #ifdef WIZ_BUILD
-  static void SDL_GP2X_AllowGfxMemory() {}
-  #include <SDL.h>
- #else
-  #include "SDL_gp2x.h"
- #endif
- SDL_Surface *hw_screen;
+#include "SDL_gp2x.h"
+SDL_Surface *hw_screen;
 #endif
 SDL_Surface *screen;
 const u32 video_scale = 1;
@@ -3328,6 +3335,14 @@ void flip_screen()
   }
 }
 
+#elif defined(WIZ_BUILD)
+
+void flip_screen()
+{
+  pollux_video_flip();
+  screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
+}
+
 #else
 
 #define integer_scale_copy_2()                                                \
@@ -3528,6 +3543,12 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
+#elif defined(WIZ_BUILD)
+
+void init_video()
+{
+}
+
 #else
 
 void init_video()
@@ -3654,6 +3675,44 @@ void clear_screen(u16 color)
   sceGuClear(GU_COLOR_BUFFER_BIT);
   sceGuFinish();
   sceGuSync(0, 0); */
+}
+
+#elif defined(WIZ_BUILD)
+
+void video_resolution_large()
+{
+  screen_offset = 0;
+  resolution_width = 320;
+  resolution_height = 240;
+
+  fb_use_buffers(1);
+  flip_screen();
+  clear_screen(0);
+}
+
+void video_resolution_small()
+{
+  screen_offset = 320*40 + 40;
+  resolution_width = 240;
+  resolution_height = 160;
+
+  fb_use_buffers(999);
+  clear_screen(0);
+  flip_screen();
+}
+
+void set_gba_resolution(video_scale_type scale)
+{
+  screen_scale = scale;
+}
+
+void clear_screen(u16 color)
+{
+  u32 col = ((u32)color << 16) | color;
+  u32 *p = gpsp_gp2x_screen;
+  int c = 320*240/2;
+  while (c-- > 0)
+    *p++ = col;
 }
 
 #else

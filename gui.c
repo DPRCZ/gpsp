@@ -1226,7 +1226,12 @@ u32 menu(u16 *original_screen)
   menu_option_type graphics_sound_options[] =
   {
     string_selection_option(NULL, "Display scaling", scale_options,
-     (u32 *)(&screen_scale), 3,
+     (u32 *)(&screen_scale),
+#ifdef WIZ_BUILD
+     2,
+#else
+     3,
+#endif
 #ifndef GP2X_BUILD
      "Determines how the GBA screen is resized in relation to the entire\n"
      "screen. Select unscaled 3:2 for GBA resolution, scaled 3:2 for GBA\n"
@@ -1244,14 +1249,14 @@ u32 menu(u16 *original_screen)
 #endif
     string_selection_option(NULL, "Frameskip type", frameskip_options,
      (u32 *)(&current_frameskip_type), 3,
-     "Determines what kind of frameskipping to use.\n"
 #ifndef GP2X_BUILD
+     "Determines what kind of frameskipping to use.\n"
      "Frameskipping may improve emulation speed of many games.\n"
-     "Off: Do not skip any frames.\n"
-     "Auto: Skip up to N frames (see next option) as needed.\n"
-     "Manual: Always render only 1 out of N + 1 frames."
 #endif
-     "", 5),
+     "Off: Do not skip any frames.\n"
+     "Auto: Skip up to N frames (see next opt) as needed.\n"
+     "Manual: Always render only 1 out of N + 1 frames."
+     , 5),
     numeric_selection_option(NULL, "Frameskip value", &frameskip_value, 100,
 #ifndef GP2X_BUILD
      "For auto frameskip, determines the maximum number of frames that\n"
@@ -1414,9 +1419,15 @@ u32 menu(u16 *original_screen)
     gamepad_config_option("Y            ", 7),
     gamepad_config_option("Left Trigger ", 8),
     gamepad_config_option("Right Trigger", 9),
+#ifdef WIZ_BUILD
+    gamepad_config_option("Menu         ", 10),
+#else
     gamepad_config_option("Start        ", 10),
+#endif
     gamepad_config_option("Select       ", 11),
+#ifndef WIZ_BUILD
     gamepad_config_option("Stick Push   ", 12),
+#endif
     submenu_option(NULL, "Back", "Return to the main menu.", 14)
   };
 

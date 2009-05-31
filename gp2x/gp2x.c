@@ -38,8 +38,6 @@ static volatile u16 *gpsp_gp2x_memregs;
 static volatile u32 *gpsp_gp2x_memregl;
 unsigned short *gp2x_memregs;
 
-static volatile u16 *MEM_REG;
-
 s32 gp2x_load_mmuhack()
 {
   s32 mmufd = open("/dev/mmuhack", O_RDWR);
@@ -57,6 +55,89 @@ s32 gp2x_load_mmuhack()
   return 0;
 }
 
+#ifdef WIZ_BUILD
+#include <linux/fb.h>
+void *gpsp_gp2x_screen;
+static u32 fb_paddr[3];
+static void *fb_vaddr[3];
+static u32 fb_work_buf;
+const int fb_buf_count = 3;
+static int fb_buf_use = 3;
+
+static void fb_video_init()
+{
+  struct fb_fix_screeninfo fbfix;
+  int i, ret;
+  int fbdev;
+
+  fbdev = open("/dev/fb0", O_RDWR);
+  if (fbdev < 0) {
+    perror("can't open fbdev");
+    exit(1);
+  }
+
+  ret = ioctl(fbdev, FBIOGET_FSCREENINFO, &fbfix);
+  if (ret == -1)
+  {
+    perror("ioctl(fbdev) failed");
+    exit(1);
+  }
+
+  printf("framebuffer: \"%s\" @ %08lx\n", fbfix.id, fbfix.smem_start);
+  fb_paddr[0] = fbfix.smem_start;
+  close(fbdev);
+
+  fb_vaddr[0] = mmap(0, 320*240*2*fb_buf_count, PROT_READ|PROT_WRITE,
+    MAP_SHARED, gpsp_gp2x_dev, fb_paddr[0]);
+  if (fb_vaddr[0] == MAP_FAILED)
+  {
+    perror("mmap(fb_vaddr) failed");
+    exit(1);
+  }
+  memset(fb_vaddr[0], 0, 320*240*2*fb_buf_count);
+
+  printf("  %p -> %08x\n", fb_vaddr[0], fb_paddr[0]);
+  for (i = 1; i < fb_buf_count; i++)
+  {
+    fb_paddr[i] = fb_paddr[i-1] + 320*240*2;
+    fb_vaddr[i] = (char *)fb_vaddr[i-1] + 320*240*2;
+    printf("  %p -> %08x\n", fb_vaddr[i], fb_paddr[i]);
+  }
+  fb_work_buf = 0;
+  fb_buf_use = fb_buf_count;
+
+  pollux_video_flip();
+  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
+}
+
+void pollux_video_flip()
+{
+  warm_cache_op_all(WOP_D_CLEAN);
+  gpsp_gp2x_memregl[0x406C>>2] = fb_paddr[fb_work_buf];
+  gpsp_gp2x_memregl[0x4058>>2] |= 0x10;
+  fb_work_buf++;
+  if (fb_work_buf >= fb_buf_use)
+    fb_work_buf = 0;
+  gpsp_gp2x_screen = fb_vaddr[fb_work_buf];
+}
+
+void fb_use_buffers(int count)
+{
+  if (count < 1)
+    count = 1;
+  else if (count > fb_buf_count)
+    count = fb_buf_count;
+  fb_buf_use = count;
+}
+
+static void fb_video_exit()
+{
+  /* switch to default fb mem */
+  gpsp_gp2x_memregl[0x406C>>2] = fb_paddr[0];
+  gpsp_gp2x_memregl[0x4058>>2] |= 0x10;
+}
+#endif
+
 void gp2x_init()
 {
   gpsp_gp2x_dev = open("/dev/mem",   O_RDWR);
@@ -67,10 +148,11 @@ void gp2x_init()
   gpsp_gp2x_memregs = (unsigned short *)gpsp_gp2x_memregl;
 #ifdef WIZ_BUILD
   gpsp_gp2x_gpiodev = open("/dev/GPIO", O_RDONLY);
-#endif
   warm_init();
+  fb_video_init();
+#endif
 
-  clear_screen(0);
+//  clear_screen(0);
 //  main_cpuspeed(0, NULL);
   gp2x_memregs = (void *)gpsp_gp2x_memregs;
   cpuctrl_init();
@@ -79,12 +161,13 @@ void gp2x_init()
 
 void gp2x_quit()
 {
+#ifdef WIZ_BUILD
+  close(gpsp_gp2x_gpiodev);
+  fb_video_exit();
+#endif
   munmap((void *)gpsp_gp2x_memregl, 0x10000);
   close(gpsp_gp2x_dev_audio);
   close(gpsp_gp2x_dev);
-#ifdef WIZ_BUILD
-  close(gpsp_gp2x_gpiodev);
-#endif
 
   //chdir("/usr/gp2x");
   //execl("gp2xmenu", "gp2xmenu", NULL);

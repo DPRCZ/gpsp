@@ -509,6 +509,13 @@ u32 update_input()
     buttons |= GP2X_VOL_MIDDLE;
   }
 
+  /* for Wiz */
+  if((buttons & GP2X_VOL_DOWN) && (buttons & GP2X_SELECT))
+  {
+    buttons &= ~(GP2X_VOL_DOWN | GP2X_SELECT);
+    buttons |= GP2X_VOL_MIDDLE;
+  }
+
   handled_buttons = ((last_buttons ^ buttons) | GP2X_VOL_DOWN | GP2X_VOL_UP) & buttons;
   last_buttons = buttons;
 

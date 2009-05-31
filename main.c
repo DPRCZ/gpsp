@@ -226,12 +226,12 @@ int main(int argc, char *argv[])
   delay_us(2500000);
 #endif
 
-  init_video();
-
 #ifdef GP2X_BUILD
   // Overclocking GP2X and MMU patch goes here
   gp2x_init();
 #endif
+
+  init_video();
 
 #ifdef GP2X_BUILD
   sprintf(bios_filename, "%s/%s", main_path, "gba_bios.bin");

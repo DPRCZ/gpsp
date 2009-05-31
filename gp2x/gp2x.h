@@ -51,4 +51,9 @@ void set_940_Div(u16 div);
 
 s32 gp2x_load_mmuhack();
 
+/* wiz only */
+extern void *gpsp_gp2x_screen;
+void fb_use_buffers(int count);
+void pollux_video_flip();
+
 #endif

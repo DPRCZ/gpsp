@@ -16,7 +16,7 @@ endif
 
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
             cheats.o zip.o cpu_threaded.z arm_stub.o video_blend.o            \
-            flush_cache.o warm.o sys_cacheflush.o
+            warm.o sys_cacheflush.o upscale_aspect.o
 BIN       = gpsp.gpe 
 
 # Platform specific definitions 
@@ -55,6 +55,9 @@ LIBS       += -ggdb
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
 %.o: %.S
+	$(CC) $(ASFLAGS) $(INCLUDES) -c -o $@ $<
+
+%.o: %.s
 	$(CC) $(ASFLAGS) $(INCLUDES) -c -o $@ $<
 
 all:	$(OBJS)

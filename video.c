@@ -3339,6 +3339,12 @@ void flip_screen()
 
 void flip_screen()
 {
+  if((screen_scale == scaled_aspect) &&
+   (resolution_width == small_resolution_width) &&
+   (resolution_height == small_resolution_height))
+  {
+    upscale_aspect(gpsp_gp2x_screen, screen_pixels);
+  }
   pollux_video_flip();
   screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
 }
@@ -3692,13 +3698,19 @@ void video_resolution_large()
 
 void video_resolution_small()
 {
-  screen_offset = 320*40 + 40;
+  if(screen_scale == scaled_aspect)
+    screen_offset = 320*(80 - 14) + 80;
+  else
+    screen_offset = 320*40 + 40;
   resolution_width = 240;
   resolution_height = 160;
 
-  fb_use_buffers(999);
+  fb_use_buffers(3);
   clear_screen(0);
   flip_screen();
+  clear_screen(0);
+  flip_screen();
+  clear_screen(0);
 }
 
 void set_gba_resolution(video_scale_type scale)

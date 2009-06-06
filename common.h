@@ -135,8 +135,8 @@
 
   #define file_close(filename_tag)                                            \
   {                                                                           \
-    sync();                                                                   \
     fclose(filename_tag);                                                     \
+    sync();                                                                   \
   }                                                                           \
 
 #else

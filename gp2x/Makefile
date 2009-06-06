@@ -34,7 +34,6 @@ INCLUDES   = `$(PREFIX)/bin/sdl-config --cflags` -I$(PREFIX)/include
 LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
               -lm -ldl -lpthread -lz
 ifneq ($(WIZ),1)
-OBJS       += cpuctrl_mmsp2.o
 LIBS       += -static
 endif
 

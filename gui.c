@@ -78,6 +78,34 @@
 #define COLOR_FRAMESKIP_BAR color16(15, 31, 31)
 #define COLOR_HELP_TEXT     color16(16, 40, 24)
 
+#ifdef PSP_BUILD
+  #define get_clock_speed() \
+    clock_speed = (clock_speed_number + 1) * 33
+  #define get_clock_speed_number() \
+    clock_speed_number = (clock_speed / 33) - 1
+#elif defined(WIZ_BUILD)
+  #define get_clock_speed() \
+    clock_speed = 300 + (clock_speed_number * 3333) / 100
+  #define get_clock_speed_number() \
+    clock_speed_number = (clock_speed - 300) / 33
+#elif defined(GP2X_BUILD)
+  #define get_clock_speed() \
+    clock_speed = 150 + clock_speed_number * 10
+  #define get_clock_speed_number() \
+    clock_speed_number = (clock_speed - 150) / 10
+#else
+  #define get_clock_speed() 0
+  #define get_clock_speed_number() 0
+#endif
+
+const int
+#ifdef WIZ_BUILD
+  default_clock_speed = 533;
+#elif defined(GP2X_BUILD)
+  default_clock_speed = 200;
+#else
+  default_clock_speed = 333;
+#endif
 int sort_function(const void *dest_str_ptr, const void *src_str_ptr)
 {
   char *dest_str = *((char **)dest_str_ptr);
@@ -676,7 +704,10 @@ s32 load_game_config_file()
       random_skip = file_options[2] % 2;
       clock_speed = file_options[3];
 
-#ifdef GP2X_BUILD
+#ifdef WIZ_BUILD
+      if(clock_speed > 900)
+        clock_speed = 533;
+#elif defined(GP2X_BUILD)
       if(clock_speed >= 300)
         clock_speed = 200;
 #else
@@ -710,11 +741,7 @@ s32 load_game_config_file()
   current_frameskip_type = auto_frameskip;
   frameskip_value = 4;
   random_skip = 0;
-#ifdef GP2X_BUILD
-  clock_speed = 200;
-#else
-  clock_speed = 333;
-#endif
+  clock_speed = default_clock_speed;
 
   for(i = 0; i < 10; i++)
   {
@@ -959,9 +986,7 @@ void get_savestate_filename_noshot(u32 slot, u8 *name_buffer)
 u32 menu(u16 *original_screen)
 {
   u32 clock_speed_number;
-#ifdef GP2X_BUILD
-  static u32 clock_speed_old = 200;
-#endif
+  static u32 clock_speed_old = default_clock_speed;
   u8 print_buffer[81];
   u32 _current_option = 0;
   gui_action_type gui_action;
@@ -1017,11 +1042,7 @@ u32 menu(u16 *original_screen)
 
   void menu_quit()
   {
-  #ifdef PSP_BUILD
-    clock_speed = (clock_speed_number + 1) * 33;
-  #elif defined(GP2X_BUILD)
-    clock_speed = 150 + clock_speed_number * 10;
-  #endif
+    get_clock_speed();
     save_config_file();
     quit();
   }
@@ -1154,9 +1175,13 @@ u32 menu(u16 *original_screen)
 
   u8 *scale_options[] =
   {
+#ifdef WIZ_BUILD
+    "unscaled 3:2", "scaled 3:2 (slower)"
+#else
     "unscaled 3:2", "scaled 3:2", "fullscreen"
 #ifdef PSP_BUILD
     " 16:9"
+#endif
 #endif
   };
 
@@ -1181,7 +1206,15 @@ u32 menu(u16 *original_screen)
 
   u8 *update_backup_options[] = { "Exit only", "Automatic" };
 
-#ifdef GP2X_BUILD
+#ifdef WIZ_BUILD
+  u8 *clock_speed_options[] =
+  {
+    "300MHz", "333MHz", "366MHz", "400MHz", "433MHz",
+    "466MHz", "500MHz", "533MHz", "566MHz", "600MHz",
+    "633MHz", "666MHz", "700MHz", "733MHz", "766MHz",
+    "800MHz", "833MHz", "866MHz", "900MHz"
+  };
+#elif defined(GP2X_BUILD)
   u8 *clock_speed_options[] =
   {
     "150MHz", "160MHz", "170MHz", "180MHz", "190MHz",
@@ -1315,11 +1348,7 @@ u32 menu(u16 *original_screen)
     cheat_option(9),
     string_selection_option(NULL, "Clock speed",
      clock_speed_options, &clock_speed_number,
-#ifdef GP2X_BUILD
-     15,
-#else
-     10,
-#endif
+     sizeof(clock_speed_options) / sizeof(clock_speed_options[0]),
      "Change the clock speed of the device. Higher clock\n"
      "speed will yield better performance, but will drain\n"
      "battery life further.", 11),
@@ -1525,11 +1554,13 @@ u32 menu(u16 *original_screen)
     }
   }
 
-#ifdef PSP_BUILD
-  clock_speed_number = (clock_speed / 33) - 1;
-#elif defined(GP2X_BUILD)
-  clock_speed_number = (clock_speed - 150) / 10;
-#endif
+  get_clock_speed_number();
+  if (clock_speed_number < 0 || clock_speed_number >=
+   sizeof(clock_speed_options) / sizeof(clock_speed_options[0]))
+  {
+    clock_speed = default_clock_speed;
+    get_clock_speed_number();
+  }
 
   video_resolution_large();
 
@@ -1680,18 +1711,17 @@ u32 menu(u16 *original_screen)
   set_gba_resolution(screen_scale);
   video_resolution_small();
 
+  get_clock_speed();
+  if (clock_speed != clock_speed_old)
+  {
+    printf("about to set CPU clock to %iMHz\n", clock_speed);
   #ifdef PSP_BUILD
-    clock_speed = (clock_speed_number + 1) * 33;
     scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
   #elif defined(GP2X_BUILD)
-    clock_speed = 150 + clock_speed_number * 10;
-    if (clock_speed != clock_speed_old)
-    {
-      printf("about to set CPU clock to %iMHz\n", clock_speed);
-      set_FCLK(clock_speed);
-      clock_speed_old = clock_speed;
-    }
+    set_FCLK(clock_speed);
   #endif
+    clock_speed_old = clock_speed;
+  }
 
   SDL_PauseAudio(0);
 

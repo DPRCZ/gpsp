@@ -1,6 +1,8 @@
 #ifndef GP2X_H
 #define GP2X_H
 
+#include "warm.h"
+
 enum
 {
   GP2X_UP       = 1 << 0,
@@ -33,23 +35,9 @@ extern u32 gpsp_gp2x_dev;
 void gp2x_sound_volume(u32 volume_up);
 void gp2x_quit();
 
-// call this at first
-void cpuctrl_init(void);
-void save_system_regs(void);
-void cpuctrl_deinit(void);
-void set_display_clock_div(unsigned div);
-
 void set_FCLK(u32 MHZ);
-// 0 to 7 divider (freq = FCLK / (1 + div))
-void set_920_Div(u16 div);
-void set_DCLK_Div(u16 div);
 
-void Disable_940(void);
-void gp2x_video_wait_vsync(void);
-unsigned short get_920_Div();
-void set_940_Div(u16 div);
-
-s32 gp2x_load_mmuhack();
+void upscale_aspect(u16 *dst, u16 *src);
 
 /* wiz only */
 extern void *gpsp_gp2x_screen;

@@ -193,11 +193,6 @@ int main(int argc, char *argv[])
   u8 load_filename[512];
   u8 bios_filename[512];
 
-#ifdef GP2X_BUILD
-  if(gp2x_load_mmuhack() == -1)
-;//    delay_us(2500000);
-#endif
-
 #ifdef PSP_BUILD
   sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 0,
    vblank_interrupt_handler, NULL);

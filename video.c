@@ -105,7 +105,6 @@ SDL_Surface *hw_screen;
 #endif
 SDL_Surface *screen;
 const u32 video_scale = 1;
-extern void gp2x_flush_cache(void *beginning_addr, void *end_addr, int flags);
 
 #define get_screen_pixels()                                                   \
   ((u16 *)screen->pixels)                                                     \
@@ -3443,9 +3442,7 @@ void flip_screen()
     {
       SDL_BlitSurface(screen, NULL, hw_screen, NULL);
     }
-    /* it is unclear if this syscall takes virtual or physical addresses,
-     * but using virtual seems to work for me. */
-    gp2x_flush_cache(hw_screen->pixels, hw_screen->pixels + 320*240, 0);
+    warm_cache_op_all(WOP_D_CLEAN);
   }
 #else
   SDL_Flip(screen);
@@ -3570,7 +3567,7 @@ void init_video()
   screen = SDL_CreateRGBSurface(SDL_HWSURFACE, 240 * video_scale,
    160 * video_scale, 16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
 
-  gp2x_load_mmuhack();
+  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
 #else
   screen = SDL_SetVideoMode(240 * video_scale, 160 * video_scale, 16, 0);
 #endif
@@ -3743,7 +3740,7 @@ void video_resolution_large()
     resolution_height = 240;
   SDL_ShowCursor(0);
 
-  gp2x_load_mmuhack();
+  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
 #else
   screen = SDL_SetVideoMode(480, 272, 16, 0);
   resolution_width = 480;
@@ -3775,7 +3772,7 @@ void video_resolution_small()
 
   SDL_ShowCursor(0);
 
-  gp2x_load_mmuhack();
+  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
 #else
   screen = SDL_SetVideoMode(small_resolution_width * video_scale,
    small_resolution_height * video_scale, 16, 0);

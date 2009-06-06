@@ -19,15 +19,16 @@
 */
 
 
+#define _BSD_SOURCE
+#define _GNU_SOURCE
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "../common.h"
 #include "gp2x.h"
 #include "warm.h"
-
-extern int main_cpuspeed(int argc, char *argv[]);
-extern SDL_Surface* screen;
 
 u32 gp2x_audio_volume = 74/2;
 u32 gpsp_gp2x_dev_audio = 0;
@@ -36,24 +37,6 @@ u32 gpsp_gp2x_gpiodev = 0;
 
 static volatile u16 *gpsp_gp2x_memregs;
 static volatile u32 *gpsp_gp2x_memregl;
-unsigned short *gp2x_memregs;
-
-s32 gp2x_load_mmuhack()
-{
-  s32 mmufd = open("/dev/mmuhack", O_RDWR);
-
-  if(mmufd < 0)
-  {
-    system("/sbin/insmod mmuhack.o");
-    mmufd = open("/dev/mmuhack", O_RDWR);
-  }
-
-  if(mmufd < 0)
-    return -1;
-
-  close(mmufd);
-  return 0;
-}
 
 #ifdef WIZ_BUILD
 #include <linux/fb.h>
@@ -140,27 +123,55 @@ static void fb_video_exit()
 
 void gp2x_init()
 {
+  FILE *f;
   gpsp_gp2x_dev = open("/dev/mem",   O_RDWR);
   gpsp_gp2x_dev_audio = open("/dev/mixer", O_RDWR);
   gpsp_gp2x_memregl =
    (unsigned long  *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,
    gpsp_gp2x_dev, 0xc0000000);
   gpsp_gp2x_memregs = (unsigned short *)gpsp_gp2x_memregl;
+  warm_init();
 #ifdef WIZ_BUILD
   gpsp_gp2x_gpiodev = open("/dev/GPIO", O_RDONLY);
-  warm_init();
   fb_video_init();
 #endif
 
-//  clear_screen(0);
-//  main_cpuspeed(0, NULL);
-  gp2x_memregs = (void *)gpsp_gp2x_memregs;
-  cpuctrl_init();
+  f = fopen("romdir.txt", "r");
+  if (f != NULL)
+  {
+    char buff[256];
+    char *s = fgets(buff, sizeof(buff) - 1, f);
+    if (s)
+    {
+      int r = strlen(s);
+      while (r > 0 && isspace(buff[r-1]))
+        buff[--r] = 0;
+      chdir(buff);
+    }
+    fclose(f);
+  }
+
   gp2x_sound_volume(1);
 }
 
+#include <errno.h>
 void gp2x_quit()
 {
+  char buff[256];
+  FILE *f;
+
+  getcwd(buff, sizeof(buff));
+  chdir(main_path);
+  f = fopen("romdir.txt", "r+");
+  if (f != NULL)
+  {
+    fprintf(f, "%s", buff);
+    fclose(f);
+    truncate("romdir.txt", strlen(buff));
+    sync();
+  }
+
+  warm_finish();
 #ifdef WIZ_BUILD
   close(gpsp_gp2x_gpiodev);
   fb_video_exit();
@@ -169,6 +180,7 @@ void gp2x_quit()
   close(gpsp_gp2x_dev_audio);
   close(gpsp_gp2x_dev);
 
+  fcloseall();
   //chdir("/usr/gp2x");
   //execl("gp2xmenu", "gp2xmenu", NULL);
   exit(0);
@@ -219,13 +231,29 @@ u32 gpsp_gp2x_joystick_read(void)
 #endif
 }
 
-#ifdef WIZ_BUILD
-void cpuctrl_init(void)
-{
-}
-
+// Fout = (m * Fin) / (p * 2^s)
 void set_FCLK(u32 MHZ)
 {
-}
+  u32 v;
+  u32 mdiv, pdiv, sdiv = 0;
+#ifdef WIZ_BUILD
+  #define SYS_CLK_FREQ 27
+  // m = MDIV, p = PDIV, s = SDIV
+  pdiv = 9;
+  mdiv = (MHZ * pdiv) / SYS_CLK_FREQ;
+  mdiv &= 0x3ff;
+  v = (pdiv<<18) | (mdiv<<8) | sdiv;
+
+  gpsp_gp2x_memregl[0xf004>>2] = v;
+  gpsp_gp2x_memregl[0xf07c>>2] |= 0x8000;
+#else
+  #define SYS_CLK_FREQ 7372800
+  // m = MDIV + 8, p = PDIV + 2, s = SDIV
+  pdiv = 3;
+  mdiv = (MHZ * pdiv * 1000000) / SYS_CLK_FREQ;
+  mdiv &= 0xff;
+  v = ((mdiv-8)<<8) | ((pdiv-2)<<2) | sdiv;
+  gpsp_gp2x_memregs[0x910>>1] = v;
 #endif
+}
 

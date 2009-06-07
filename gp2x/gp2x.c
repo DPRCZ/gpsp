@@ -41,11 +41,11 @@ static volatile u32 *gpsp_gp2x_memregl;
 #ifdef WIZ_BUILD
 #include <linux/fb.h>
 void *gpsp_gp2x_screen;
-static u32 fb_paddr[3];
-static void *fb_vaddr[3];
+#define fb_buf_count 4
+static u32 fb_paddr[fb_buf_count];
+static void *fb_vaddr[fb_buf_count];
 static u32 fb_work_buf;
-const int fb_buf_count = 3;
-static int fb_buf_use = 3;
+static int fb_buf_use;
 
 static void fb_video_init()
 {
@@ -111,6 +111,7 @@ void fb_use_buffers(int count)
   else if (count > fb_buf_count)
     count = fb_buf_count;
   fb_buf_use = count;
+  memset(fb_vaddr[0], 0, 320*240*2*count);
 }
 
 static void fb_video_exit()

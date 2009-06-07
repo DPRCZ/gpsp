@@ -3702,10 +3702,7 @@ void video_resolution_small()
   resolution_width = 240;
   resolution_height = 160;
 
-  fb_use_buffers(3);
-  clear_screen(0);
-  flip_screen();
-  clear_screen(0);
+  fb_use_buffers(4);
   flip_screen();
   clear_screen(0);
 }

@@ -740,6 +740,9 @@ s32 load_game_config_file()
 
   current_frameskip_type = auto_frameskip;
   frameskip_value = 4;
+#ifdef WIZ_BUILD
+  frameskip_value = 1;
+#endif
   random_skip = 0;
   clock_speed = default_clock_speed;
 

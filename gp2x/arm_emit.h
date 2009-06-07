@@ -641,15 +641,34 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
   }                                                                           \
 
+u8 *last_rom_translation_ptr = rom_translation_cache;
+u8 *last_ram_translation_ptr = ram_translation_cache;
+u8 *last_bios_translation_ptr = bios_translation_cache;
+
+#define translate_invalidate_dcache_one(which)                                \
+  if (which##_translation_ptr < last_##which##_translation_ptr)               \
+    last_##which##_translation_ptr = which##_translation_cache;               \
+  if (which##_translation_ptr > last_##which##_translation_ptr)               \
+  {                                                                           \
+    /*warm_cache_op_range(WOP_D_CLEAN, last_##which##_translation_ptr,          \
+      which##_translation_ptr - last_##which##_translation_ptr);*/              \
+    warm_cache_op_range(WOP_I_INVALIDATE, last_##which##_translation_ptr, 32);\
+    last_##which##_translation_ptr = which##_translation_ptr;                 \
+  }
+
 #define translate_invalidate_dcache()                                         \
 {                                                                             \
-  invalidate_cache_region(rom_translation_cache,                              \
-   rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE);                       \
-  invalidate_cache_region(ram_translation_cache,                              \
-   ram_translation_cache + RAM_TRANSLATION_CACHE_SIZE);                       \
-  invalidate_cache_region(bios_translation_cache,                             \
-   bios_translation_cache + BIOS_TRANSLATION_CACHE_SIZE);                     \
-}                                                                             \
+  translate_invalidate_dcache_one(rom)                                        \
+  translate_invalidate_dcache_one(ram)                                        \
+  translate_invalidate_dcache_one(bios)                                       \
+  /* notaz: tried cleaning dcache ranges, but it doesn't work for every game, \
+   * don't know why */                                                        \
+  warm_cache_op_all(WOP_D_CLEAN);                                             \
+}
+
+#define invalidate_icache_region(addr, size)                                  \
+  warm_cache_op_range(WOP_I_INVALIDATE, addr, size)
+
 
 #define block_prologue_size 0
 

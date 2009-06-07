@@ -37,14 +37,14 @@
  */
 
 .macro unpack_hi dst, src
-    mov     \dst, \src, lsr #16
-    orr     \dst, \dst, lsl #16
+    mov     \dst, \src,       lsr #16
+    orr     \dst, \dst, \dst, lsl #16
     and     \dst, \dst, lr
 .endm
 
 .macro unpack_lo dst, src
-    mov     \dst, \src, lsl #16
-    orr     \dst, \dst, lsr #16
+    mov     \dst, \src,       lsl #16
+    orr     \dst, \dst, \dst, lsr #16
     and     \dst, \dst, lr
 .endm
 

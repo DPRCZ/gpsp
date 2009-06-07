@@ -4,15 +4,9 @@
 
 # Global definitions
 
-ifeq ($(WIZ),1)
-PREFIX  = /opt/arm-openwiz-linux-gnu
-CC        = $(PREFIX)/bin/arm-openwiz-linux-gnu-gcc
-STRIP     = $(PREFIX)/bin/arm-openwiz-linux-gnu-strip
-else
 PREFIX  = /opt/open2x/gcc-4.1.1-glibc-2.3.6
 CC        = $(PREFIX)/bin/arm-open2x-linux-gcc
 STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
-endif
 
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
             cheats.o zip.o cpu_threaded.z arm_stub.o video_blend.o            \
@@ -37,8 +31,8 @@ ifneq ($(WIZ),1)
 LIBS       += -static
 endif
 
-CFLAGS     += -ggdb
-LIBS       += -ggdb
+#CFLAGS     += -ggdb
+#LIBS       += -ggdb
 
 # Compilation:
 
@@ -61,7 +55,7 @@ LIBS       += -ggdb
 
 all:	$(OBJS)
 	$(CC) $(OBJS) $(LIBS) -o $(BIN)  
-#	$(STRIP) $(BIN)
+	$(STRIP) $(BIN)
 
 clean:
 	rm -f *.o *.u *.z $(BIN) 

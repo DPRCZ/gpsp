@@ -364,10 +364,10 @@ u32 gamepad_config_map[16] =
   BUTTON_ID_SELECT,             // Select
   BUTTON_ID_L,                  // Ltrigger
   BUTTON_ID_R,                  // Rtrigger
-  BUTTON_ID_NONE,               // A
+  BUTTON_ID_FPS,                // A
   BUTTON_ID_A,                  // B
   BUTTON_ID_B,                  // X
-  BUTTON_ID_NONE,               // Y
+  BUTTON_ID_MENU,               // Y
   BUTTON_ID_VOLDOWN,            // Vol down
   BUTTON_ID_VOLUP,              // Vol up
   BUTTON_ID_FPS,                // Push

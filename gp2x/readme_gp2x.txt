@@ -12,13 +12,17 @@ not apply however).
 
 Changelog:
 
-0.9-2xb u1 (unofficial notaz release):
-- Fixed a problen in thread synchronization which caused deadlock after
-  some time.
-
-0.9-2xb u2 (unofficial notaz release):
-- Replaced non-working mmuhack.o with proper one, added cache flush calls
-  to avoid artifacts.
+0.9-2xb u4 (unofficial notaz release, done on Exophase's request)
+- Wiz port. No emulation related changes.
+- Wiz: dropped SDL for video and hitting hardware directly (GPH SDL can't
+  be trusted, it doesn't do double buffering as of firmware 1.0).
+- Added new optimized software scaler with interpolation.
+- gpSP is now saving ROM dir on exit. Delete romdir.txt if you don't
+  want that.
+- gpSP now comes with wARM, new kernel module+lib for ARM cache control
+  (replaces mmuhack).
+- gpSP no longer invalidates whole icache after recompilation, might
+  case minor speedup.
 
 0.9-2xb u3 (unofficial notaz release, released with permission):
 - Removed built-in CPU/LCD/RAM-Tweaker.
@@ -28,6 +32,14 @@ Changelog:
   (if you want to overclock using launcher, for example).
 - Fixed centering-on-first-run problem.
 - 3:2 scaled option now does what it says.
+
+0.9-2xb u2 (unofficial notaz release):
+- Replaced non-working mmuhack.o with proper one, added cache flush calls
+  to avoid artifacts.
+
+0.9-2xb u1 (unofficial notaz release):
+- Fixed a problen in thread synchronization which caused deadlock after
+  some time.
 
 0.9-2xb: 
 -- IMPORTANT-- If you're overwriting an old version, be sure to delete the

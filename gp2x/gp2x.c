@@ -122,9 +122,32 @@ static void fb_video_exit()
 }
 #endif
 
-void gp2x_init()
+static int get_romdir(char *buff, size_t size)
 {
   FILE *f;
+  char *s;
+  int r = -1;
+  
+  f = fopen("romdir.txt", "r");
+  if (f == NULL)
+    return -1;
+
+  s = fgets(buff, size, f);
+  if (s)
+  {
+    r = strlen(s);
+    while (r > 0 && isspace(buff[r-1]))
+      buff[--r] = 0;
+  }
+
+  fclose(f);
+  return r;
+}
+
+void gp2x_init()
+{
+  char buff[256];
+
   gpsp_gp2x_dev = open("/dev/mem",   O_RDWR);
   gpsp_gp2x_dev_audio = open("/dev/mixer", O_RDWR);
   gpsp_gp2x_memregl =
@@ -137,39 +160,28 @@ void gp2x_init()
   fb_video_init();
 #endif
 
-  f = fopen("romdir.txt", "r");
-  if (f != NULL)
-  {
-    char buff[256];
-    char *s = fgets(buff, sizeof(buff) - 1, f);
-    if (s)
-    {
-      int r = strlen(s);
-      while (r > 0 && isspace(buff[r-1]))
-        buff[--r] = 0;
-      chdir(buff);
-    }
-    fclose(f);
-  }
+  if (get_romdir(buff, sizeof(buff)) > 0)
+    chdir(buff);
 
   gp2x_sound_volume(1);
 }
 
-#include <errno.h>
 void gp2x_quit()
 {
-  char buff[256];
-  FILE *f;
+  char buff1[256], buff2[256];
 
-  getcwd(buff, sizeof(buff));
+  getcwd(buff1, sizeof(buff1));
   chdir(main_path);
-  f = fopen("romdir.txt", "r+");
-  if (f != NULL)
+  if (get_romdir(buff2, sizeof(buff2)) >= 0 &&
+    strcmp(buff1, buff2) != 0)
   {
-    fprintf(f, "%s", buff);
-    fclose(f);
-    truncate("romdir.txt", strlen(buff));
-    sync();
+    FILE *f = fopen("romdir.txt", "w");
+    if (f != NULL)
+    {
+      printf("writing romdir: %s\n", buff1);
+      fprintf(f, "%s", buff1);
+      fclose(f);
+    }
   }
 
   warm_finish();
@@ -182,9 +194,9 @@ void gp2x_quit()
   close(gpsp_gp2x_dev);
 
   fcloseall();
-  //chdir("/usr/gp2x");
-  //execl("gp2xmenu", "gp2xmenu", NULL);
-  exit(0);
+  sync();
+  chdir("/usr/gp2x");
+  execl("gp2xmenu", "gp2xmenu", NULL);
 }
 
 void gp2x_sound_volume(u32 volume_up)
@@ -247,6 +259,8 @@ void set_FCLK(u32 MHZ)
 
   gpsp_gp2x_memregl[0xf004>>2] = v;
   gpsp_gp2x_memregl[0xf07c>>2] |= 0x8000;
+  while (gpsp_gp2x_memregl[0xf07c>>2] & 0x8000)
+    ;
 #else
   #define SYS_CLK_FREQ 7372800
   // m = MDIV + 8, p = PDIV + 2, s = SDIV

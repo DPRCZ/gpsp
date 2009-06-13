@@ -12,6 +12,12 @@ not apply however).
 
 Changelog:
 
+0.9-2xb u5
+- Added portrait drawing modes. They eliminate tearing but are slightly
+  slower.
+- Added page scrolling in ROM browser with L/R.
+- 32MB ROM support fixed.
+
 0.9-2xb u4 (unofficial notaz release, done on Exophase's request)
 - Wiz port. No emulation related changes.
 - Wiz: dropped SDL for video and hitting hardware directly (GPH SDL can't
@@ -22,7 +28,7 @@ Changelog:
 - gpSP now comes with wARM, new kernel module+lib for ARM cache control
   (replaces mmuhack).
 - gpSP no longer invalidates whole icache after recompilation, might
-  case minor speedup.
+  cause minor speedup.
 
 0.9-2xb u3 (unofficial notaz release, released with permission):
 - Removed built-in CPU/LCD/RAM-Tweaker.

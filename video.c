@@ -87,6 +87,11 @@ static void Ge_Finish_Callback(int id, void *arg)
 
 #elif defined(WIZ_BUILD)
 
+static u16 rot_buffer[240*4];
+static u32 rot_lines_total = 4;
+static u32 rot_line_count = 0;
+static char rot_msg_buff[64];
+
 static u32 screen_offset = 0;
 static u16 *screen_pixels = NULL;
 const u32 screen_pitch = 320;
@@ -3271,6 +3276,28 @@ void update_scanline()
   if(skip_next_frame)
     return;
 
+#ifdef WIZ_BUILD
+  if (screen_scale == unscaled_rot || screen_scale == scaled_aspect_rot)
+  {
+    if (rot_line_count == rot_lines_total)
+    {
+      rot_line_count = 0;
+      if (vcount - rot_lines_total < FONT_HEIGHT && rot_msg_buff[0])
+      {
+        print_string_ext(rot_msg_buff, 0xFFFF, 0x0000, 0, 0,
+          rot_buffer, 240, 0, vcount - rot_lines_total, rot_lines_total);
+        if (vcount >= FONT_HEIGHT)
+          rot_msg_buff[0] = 0;
+      }
+      if (screen_scale == unscaled_rot)
+        do_rotated_blit(gpsp_gp2x_screen, rot_buffer, vcount);
+      else
+        upscale_aspect_row(gpsp_gp2x_screen, rot_buffer, vcount/3);
+    }
+    screen_offset = &rot_buffer[rot_line_count++ * 240];
+  }
+#endif
+
   // If the screen is in in forced blank draw pure white.
   if(dispcnt & 0x80)
   {
@@ -3338,12 +3365,26 @@ void flip_screen()
 
 void flip_screen()
 {
-  if((screen_scale == scaled_aspect) &&
-   (resolution_width == small_resolution_width) &&
+  if((resolution_width == small_resolution_width) &&
    (resolution_height == small_resolution_height))
   {
-    upscale_aspect(gpsp_gp2x_screen, screen_pixels);
+    switch(screen_scale)
+    {
+      case scaled_aspect:
+        upscale_aspect(gpsp_gp2x_screen, screen_pixels);
+        break;
+      case unscaled_rot:
+        do_rotated_blit(gpsp_gp2x_screen, rot_buffer, 160);
+        rot_line_count = 0;
+        goto no_clean;
+      case scaled_aspect_rot:
+        rot_line_count = 0;
+        goto no_clean;
+    }
   }
+  warm_cache_op_all(WOP_D_CLEAN);
+
+no_clean:
   pollux_video_flip();
   screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
 }
@@ -3691,20 +3732,40 @@ void video_resolution_large()
   fb_use_buffers(1);
   flip_screen();
   clear_screen(0);
+  wiz_lcd_set_portrait(0);
 }
 
 void video_resolution_small()
 {
-  if(screen_scale == scaled_aspect)
-    screen_offset = 320*(80 - 14) + 80;
-  else
-    screen_offset = 320*40 + 40;
-  resolution_width = 240;
-  resolution_height = 160;
-
   fb_use_buffers(4);
+
+  switch (screen_scale)
+  {
+    case unscaled:
+      screen_offset = 320*40 + 40;
+      wiz_lcd_set_portrait(0);
+      break;
+    case scaled_aspect:
+      screen_offset = 320*(80 - 14) + 80;
+      wiz_lcd_set_portrait(0);
+      break;
+    case unscaled_rot:
+      wiz_lcd_set_portrait(1);
+      rot_lines_total = 4;
+      rot_line_count = 0;
+      break;
+    case scaled_aspect_rot:
+      wiz_lcd_set_portrait(1);
+      rot_lines_total = 3;
+      rot_line_count = 0;
+      break;
+  }
+
   flip_screen();
   clear_screen(0);
+
+  resolution_width = 240;
+  resolution_height = 160;
 }
 
 void set_gba_resolution(video_scale_type scale)
@@ -3840,19 +3901,17 @@ void blit_to_screen(u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y)
 }
 
 void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad)
+ u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad, u32 h_offset, u32 height)
 {
   u16 *dest_ptr = (u16 *)_dest_ptr + (y * pitch) + x;
   u8 current_char = str[0];
   u32 current_row;
   u32 glyph_offset;
-  u32 i = 0, i2, i3;
+  u32 i = 0, i2, i3, h;
   u32 str_index = 1;
   u32 current_x = x;
 
-
-  /* EDIT */
-  if(y + FONT_HEIGHT > resolution_height)
+  if(y + height > resolution_height)
       return;
 
   while(current_char)
@@ -3867,7 +3926,8 @@ void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
     {
       glyph_offset = _font_offset[current_char];
       current_x += FONT_WIDTH;
-      for(i2 = 0; i2 < FONT_HEIGHT; i2++, glyph_offset++)
+      glyph_offset += h_offset;
+      for(i2 = h_offset, h = 0; i2 < FONT_HEIGHT && h < height; i2++, h++, glyph_offset++)
       {
         current_row = _font_bits[glyph_offset];
         for(i3 = 0; i3 < FONT_WIDTH; i3++)
@@ -3880,7 +3940,7 @@ void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
         }
         dest_ptr += (pitch - FONT_WIDTH);
       }
-      dest_ptr = dest_ptr - (pitch * FONT_HEIGHT) + FONT_WIDTH;
+      dest_ptr = dest_ptr - (pitch * h) + FONT_WIDTH;
     }
 
     i++;
@@ -3909,15 +3969,24 @@ void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
 void print_string(const char *str, u16 fg_color, u16 bg_color,
  u32 x, u32 y)
 {
+#ifdef WIZ_BUILD
+  if ((screen_scale == unscaled_rot || screen_scale == scaled_aspect_rot) &&
+   (resolution_width == small_resolution_width) &&
+   (resolution_height == small_resolution_height))
+  {
+    snprintf(rot_msg_buff, sizeof(rot_msg_buff), "%s", str);
+    return;
+  }
+#endif
   print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
-   get_screen_pitch(), 0);
+   get_screen_pitch(), 0, 0, FONT_HEIGHT);
 }
 
 void print_string_pad(const char *str, u16 fg_color, u16 bg_color,
  u32 x, u32 y, u32 pad)
 {
   print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
-   get_screen_pitch(), pad);
+   get_screen_pitch(), pad, 0, FONT_HEIGHT);
 }
 
 u32 debug_cursor_x = 0;

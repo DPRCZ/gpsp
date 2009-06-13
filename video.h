@@ -30,7 +30,8 @@ void print_string(const char *str, u16 fg_color, u16 bg_color,
 void print_string_pad(const char *str, u16 fg_color, u16 bg_color,
  u32 x, u32 y, u32 pad);
 void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad);
+ u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad,
+ u32 h_offset, u32 height);
 void clear_screen(u16 color);
 void blit_to_screen(u16 *src, u32 w, u32 h, u32 x, u32 y);
 u16 *copy_screen();
@@ -76,7 +77,11 @@ typedef enum
 {
   unscaled,
   scaled_aspect,
+#ifndef WIZ_BUILD
   fullscreen,
+#endif
+  unscaled_rot,
+  scaled_aspect_rot,
 } video_scale_type;
 
 typedef enum

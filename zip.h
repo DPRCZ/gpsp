@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef ZIP_H
+#define ZIP_H
 
 u32 load_file_zip(char *filename);
 

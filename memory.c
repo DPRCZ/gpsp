@@ -19,8 +19,6 @@
 
 #include "common.h"
 
-u32 load_file_zip(u8 *filename);
-
 // This table is configured for sequential access on system defaults
 
 u32 waitstate_cycles_sequential[16][3] =
@@ -2158,10 +2156,14 @@ u32 load_gamepak(char *name)
   s32 file_size;
   u8 cheats_filename[256];
 
+#ifdef WIZ_BUILD
+  file_size = wiz_load_gamepak(name);
+#else
   if(!strcmp(dot_position, ".zip"))
     file_size = load_file_zip(name);
   else
     file_size = load_gamepak_raw(name);
+#endif
 
   // A dumb April fool's joke was here once :o
 

@@ -46,12 +46,12 @@ static u32 fb_paddr[fb_buf_count];
 static void *fb_vaddr[fb_buf_count];
 static u32 fb_work_buf;
 static int fb_buf_use;
+static int fbdev;
 
 static void fb_video_init()
 {
   struct fb_fix_screeninfo fbfix;
   int i, ret;
-  int fbdev;
 
   fbdev = open("/dev/fb0", O_RDWR);
   if (fbdev < 0) {
@@ -68,7 +68,6 @@ static void fb_video_init()
 
   printf("framebuffer: \"%s\" @ %08lx\n", fbfix.id, fbfix.smem_start);
   fb_paddr[0] = fbfix.smem_start;
-  close(fbdev);
 
   fb_vaddr[0] = mmap(0, 320*240*2*fb_buf_count, PROT_READ|PROT_WRITE,
     MAP_SHARED, gpsp_gp2x_dev, fb_paddr[0]);
@@ -95,7 +94,6 @@ static void fb_video_init()
 
 void pollux_video_flip()
 {
-  warm_cache_op_all(WOP_D_CLEAN);
   gpsp_gp2x_memregl[0x406C>>2] = fb_paddr[fb_work_buf];
   gpsp_gp2x_memregl[0x4058>>2] |= 0x10;
   fb_work_buf++;
@@ -114,12 +112,90 @@ void fb_use_buffers(int count)
   memset(fb_vaddr[0], 0, 320*240*2*count);
 }
 
+void wiz_lcd_set_portrait(int y)
+{
+  static int old_y = -1;
+  int cmd[2] = { 0, 0 };
+
+  if (old_y == y)
+    return;
+  cmd[0] = y ? 6 : 5;
+  ioctl(fbdev, _IOW('D', 90, int[2]), cmd);
+  gpsp_gp2x_memregl[0x4004>>2] = y ? 0x013f00ef : 0x00ef013f;
+  gpsp_gp2x_memregl[0x4000>>2] |= 1 << 3;
+  old_y = y;
+}
+
 static void fb_video_exit()
 {
-  /* switch to default fb mem */
+  /* switch to default fb mem, turn portrait off */
   gpsp_gp2x_memregl[0x406C>>2] = fb_paddr[0];
   gpsp_gp2x_memregl[0x4058>>2] |= 0x10;
+  wiz_lcd_set_portrait(0);
+  close(fbdev);
 }
+
+static int wiz_gamepak_fd = -1;
+static u32 wiz_gamepak_size;
+
+static void wiz_gamepak_cleanup()
+{
+  if (wiz_gamepak_size)
+    munmap(gamepak_rom, wiz_gamepak_size);
+  if (wiz_gamepak_fd >= 0)
+    close(wiz_gamepak_fd);
+  gamepak_rom = NULL;
+  wiz_gamepak_size = 0;
+  wiz_gamepak_fd = -1;
+}
+
+u32 wiz_load_gamepak(char *name)
+{
+  char *dot_position = strrchr(name, '.');
+  u32 ret;
+
+  if (!strcasecmp(dot_position, ".zip"))
+  {
+    if (wiz_gamepak_fd >= 0)
+    {
+      wiz_gamepak_cleanup();
+      printf("switching to ROM malloc\n");
+      init_gamepak_buffer();
+    }
+    return load_file_zip(name);
+  }
+
+  if (wiz_gamepak_fd < 0)
+  {
+    extern void *gamepak_memory_map;
+    free(gamepak_rom);
+    free(gamepak_memory_map);
+    gamepak_memory_map = NULL;
+    printf("switching to ROM mmap\n");
+  }
+  else
+    wiz_gamepak_cleanup();
+
+  wiz_gamepak_fd = open(name, O_RDONLY|O_NOATIME, S_IRUSR);
+  if (wiz_gamepak_fd < 0)
+  {
+    perror("wiz_load_gamepak: open failed");
+    return -1;
+  }
+
+  ret = lseek(wiz_gamepak_fd, 0, SEEK_END);
+  wiz_gamepak_size = gamepak_ram_buffer_size = ret;
+
+  gamepak_rom = mmap(0, ret, PROT_READ, MAP_SHARED, wiz_gamepak_fd, 0);
+  if (gamepak_rom == MAP_FAILED)
+  {
+    perror("wiz_load_gamepak: mmap failed");
+    return -1;
+  }
+
+  return ret;
+}
+
 #endif
 
 static int get_romdir(char *buff, size_t size)
@@ -188,6 +264,7 @@ void gp2x_quit()
 #ifdef WIZ_BUILD
   close(gpsp_gp2x_gpiodev);
   fb_video_exit();
+  wiz_gamepak_cleanup();
 #endif
   munmap((void *)gpsp_gp2x_memregl, 0x10000);
   close(gpsp_gp2x_dev_audio);
@@ -195,8 +272,7 @@ void gp2x_quit()
 
   fcloseall();
   sync();
-  chdir("/usr/gp2x");
-  execl("gp2xmenu", "gp2xmenu", NULL);
+  exit(0);
 }
 
 void gp2x_sound_volume(u32 volume_up)

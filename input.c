@@ -412,6 +412,12 @@ gui_action_type get_gui_input()
   if(new_buttons & GP2X_RIGHT)
     new_button = CURSOR_RIGHT;
 
+  if(new_buttons & GP2X_L)
+    new_button = CURSOR_L;
+
+  if(new_buttons & GP2X_R)
+    new_button = CURSOR_R;
+
 
   if(new_button != CURSOR_NONE)
   {

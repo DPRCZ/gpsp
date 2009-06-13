@@ -70,6 +70,8 @@ typedef enum
   CURSOR_SELECT,
   CURSOR_BACK,
   CURSOR_EXIT,
+  CURSOR_L,
+  CURSOR_R,
   CURSOR_NONE
 } gui_action_type;
 

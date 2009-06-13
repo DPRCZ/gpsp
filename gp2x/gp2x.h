@@ -43,5 +43,10 @@ void upscale_aspect(u16 *dst, u16 *src);
 extern void *gpsp_gp2x_screen;
 void fb_use_buffers(int count);
 void pollux_video_flip();
+void wiz_lcd_set_portrait(int y);
+u32  wiz_load_gamepak(char *name);
+
+void do_rotated_blit(void *dst, void *linesx4, u32 y);
+void upscale_aspect_row(void *dst, void *linesx3, u32 row);
 
 #endif

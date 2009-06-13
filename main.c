@@ -494,6 +494,9 @@ void trigger_ext_event()
   event_number++;
 }
 
+static u32 fps = 60;
+static u32 frames_drawn = 60;
+
 u32 update_gba()
 {
   irq_type irq_raised = IRQ_NONE;
@@ -608,9 +611,17 @@ u32 update_gba()
             continue;
 
           update_gbc_sound(cpu_ticks);
-          synchronize();
+
+          if(gp2x_fps_debug)
+          {
+            char print_buffer[32];
+            sprintf(print_buffer, "%d (%d)", fps, frames_drawn);
+            print_string(print_buffer, 0xFFFF, 0x000, 0, 0);
+          }
 
           update_screen();
+
+          synchronize();
 
           if(update_backup_flag)
             update_backup();
@@ -758,28 +769,16 @@ u32 num_skipped_frames = 0;
 u32 interval_skipped_frames;
 u32 frames;
 
-u32 skipped_frames = 0;
-u32 ticks_needed_total = 0;
 const u32 frame_interval = 60;
 
 void synchronize()
 {
   u64 new_ticks;
   u64 time_delta;
-  static u32 fps = 60;
-  static u32 frames_drawn = 60;
-
-  if(gp2x_fps_debug)
-  {
-    char print_buffer[128];
-    sprintf(print_buffer, "%d (%d)", fps, frames_drawn);
-    print_string(print_buffer, 0xFFFF, 0x000, 0, 0);
-  }
 
   get_ticks_us(&new_ticks);
   time_delta = new_ticks - last_screen_timestamp;
   last_screen_timestamp = new_ticks;
-  ticks_needed_total += time_delta;
 
   skip_next_frame = 0;
   virtual_frame_count++;
@@ -802,14 +801,6 @@ void synchronize()
       num_skipped_frames = 0;
     }
   }
-  else
-  {
-    if((synchronize_flag) &&
-     ((time_delta < frame_speed) && synchronize_flag))
-    {
-      delay_us(frame_speed - time_delta);
-    }
-  }
 
   frames++;
 
@@ -829,7 +820,6 @@ void synchronize()
 
     last_frame_interval_timestamp = new_ticks;
     interval_skipped_frames = 0;
-    ticks_needed_total = 0;
     frames = 0;
   }
 

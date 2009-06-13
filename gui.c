@@ -140,11 +140,11 @@ s32 load_file(u8 **wildcards, u8 *result)
   u32 chosen_file, chosen_dir;
   u32 dialog_result = 1;
   s32 return_value = 1;
-  u32 current_file_selection;
-  u32 current_file_scroll_value;
+  s32 current_file_selection;
+  s32 current_file_scroll_value;
   u32 current_dir_selection;
   u32 current_dir_scroll_value;
-  u32 current_file_in_scroll;
+  s32 current_file_in_scroll;
   u32 current_dir_in_scroll;
   u32 current_file_number, current_dir_number;
   u32 current_column = 0;
@@ -364,6 +364,13 @@ s32 load_file(u8 **wildcards, u8 *result)
                 current_file_in_scroll++;
               }
             }
+            else
+            {
+              clear_screen(COLOR_BG);
+              current_file_selection = 0;
+              current_file_scroll_value = 0;
+              current_file_in_scroll = 0;
+            }
           }
           else
           {
@@ -384,6 +391,25 @@ s32 load_file(u8 **wildcards, u8 *result)
 
           break;
 
+        case CURSOR_R:
+          if (current_column != 0)
+            break;
+          clear_screen(COLOR_BG);
+	  current_file_selection += FILE_LIST_ROWS;
+          if (current_file_selection > num_files - 1)
+            current_file_selection = num_files - 1;
+          current_file_scroll_value = current_file_selection - FILE_LIST_ROWS / 2;
+          if (current_file_scroll_value < 0)
+          {
+            current_file_scroll_value = 0;
+            current_file_in_scroll = current_file_selection;
+          }
+          else
+          {
+            current_file_in_scroll = FILE_LIST_ROWS / 2;
+          }
+          break;
+
         case CURSOR_UP:
           if(current_column == 0)
           {
@@ -399,6 +425,17 @@ s32 load_file(u8 **wildcards, u8 *result)
               {
                 current_file_in_scroll--;
               }
+            }
+            else
+            {
+              clear_screen(COLOR_BG);
+              current_file_selection = num_files - 1;
+              current_file_in_scroll = FILE_LIST_ROWS - 1;
+              if (current_file_in_scroll > num_files - 1)
+                current_file_in_scroll = num_files - 1;
+              current_file_scroll_value = num_files - FILE_LIST_ROWS;
+              if (current_file_scroll_value < 0)
+                current_file_scroll_value = 0;
             }
           }
           else
@@ -419,7 +456,26 @@ s32 load_file(u8 **wildcards, u8 *result)
           }
           break;
 
-        case CURSOR_RIGHT:
+        case CURSOR_L:
+          if (current_column != 0)
+            break;
+          clear_screen(COLOR_BG);
+	  current_file_selection -= FILE_LIST_ROWS;
+          if (current_file_selection < 0)
+            current_file_selection = 0;
+          current_file_scroll_value = current_file_selection - FILE_LIST_ROWS / 2;
+          if (current_file_scroll_value < 0)
+          {
+            current_file_scroll_value = 0;
+            current_file_in_scroll = current_file_selection;
+          }
+          else
+          {
+            current_file_in_scroll = FILE_LIST_ROWS / 2;
+          }
+          break;
+
+         case CURSOR_RIGHT:
           if(current_column == 0)
           {
             if(num_dirs != 0)
@@ -951,7 +1007,7 @@ void get_savestate_snapshot(u8 *savestate_filename)
   {
     memset(snapshot_buffer, 0, 240 * 160 * 2);
     print_string_ext("No savestate exists for this slot.",
-     0xFFFF, 0x0000, 15, 75, snapshot_buffer, 240, 0);
+     0xFFFF, 0x0000, 15, 75, snapshot_buffer, 240, 0, 0, FONT_HEIGHT);
     print_string("---------- --/--/---- --:--:--          ", COLOR_HELP_TEXT,
      COLOR_BG, 10, 40);
   }
@@ -1179,7 +1235,8 @@ u32 menu(u16 *original_screen)
   u8 *scale_options[] =
   {
 #ifdef WIZ_BUILD
-    "unscaled 3:2", "scaled 3:2 (slower)"
+    "unscaled 3:2", "scaled 3:2 (slower)",
+    "unscaled 3:2 (anti-tear)", "scaled 3:2 (anti-tear)"
 #else
     "unscaled 3:2", "scaled 3:2", "fullscreen"
 #ifdef PSP_BUILD
@@ -1263,11 +1320,7 @@ u32 menu(u16 *original_screen)
   {
     string_selection_option(NULL, "Display scaling", scale_options,
      (u32 *)(&screen_scale),
-#ifdef WIZ_BUILD
-     2,
-#else
-     3,
-#endif
+     sizeof(scale_options) / sizeof(scale_options[0]),
 #ifndef GP2X_BUILD
      "Determines how the GBA screen is resized in relation to the entire\n"
      "screen. Select unscaled 3:2 for GBA resolution, scaled 3:2 for GBA\n"
@@ -1581,7 +1634,7 @@ u32 menu(u16 *original_screen)
     first_load = 1;
     memset(original_screen, 0x00, 240 * 160 * 2);
     print_string_ext("No game loaded yet.", 0xFFFF, 0x0000,
-     60, 75,original_screen, 240, 0);
+     60, 75,original_screen, 240, 0, 0, FONT_HEIGHT);
   }
 
   choose_menu(&main_menu);
@@ -1627,12 +1680,12 @@ u32 menu(u16 *original_screen)
       if(display_option == current_option)
       {
         print_string_pad(line_buffer, COLOR_ACTIVE_ITEM, COLOR_BG, 10,
-         (display_option->line_number * 10) + 40, 36);
+         (display_option->line_number * 10) + 40, 41);
       }
       else
       {
         print_string_pad(line_buffer, COLOR_INACTIVE_ITEM, COLOR_BG, 10,
-         (display_option->line_number * 10) + 40, 36);
+         (display_option->line_number * 10) + 40, 41);
       }
     }
 

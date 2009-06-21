@@ -79,33 +79,48 @@
 #define COLOR_HELP_TEXT     color16(16, 40, 24)
 
 #ifdef PSP_BUILD
-  #define get_clock_speed() \
+  u8 *clock_speed_options[] =
+  {
+    "33MHz", "66MHz", "100MHz", "133MHz", "166MHz", "200MHz", "233MHz",
+    "266MHz", "300MHz", "333MHz"
+  };
+  #define menu_get_clock_speed() \
     clock_speed = (clock_speed_number + 1) * 33
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed / 33) - 1
 #elif defined(WIZ_BUILD)
-  #define get_clock_speed() \
+  u8 *clock_speed_options[] =
+  {
+    "300MHz", "333MHz", "366MHz", "400MHz", "433MHz",
+    "466MHz", "500MHz", "533MHz", "566MHz", "600MHz",
+    "633MHz", "666MHz", "700MHz", "733MHz", "766MHz",
+    "800MHz", "833MHz", "866MHz", "900MHz"
+  };
+  #define menu_get_clock_speed() \
     clock_speed = 300 + (clock_speed_number * 3333) / 100
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed - 300) / 33
 #elif defined(GP2X_BUILD)
-  #define get_clock_speed() \
+  u8 *clock_speed_options[] =
+  {
+    "150MHz", "160MHz", "170MHz", "180MHz", "190MHz",
+    "200MHz", "210MHz", "220MHz", "230MHz", "240MHz",
+    "250MHz", "260MHz", "270MHz", "280MHz", "290MHz"
+  };
+  #define menu_get_clock_speed() \
     clock_speed = 150 + clock_speed_number * 10
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed - 150) / 10
 #else
-  #define get_clock_speed() 0
+  u8 *clock_speed_options[] =
+  {
+    "0"
+  };
+  #define menu_get_clock_speed() 0
   #define get_clock_speed_number() 0
 #endif
 
-const int
-#ifdef WIZ_BUILD
-  default_clock_speed = 533;
-#elif defined(GP2X_BUILD)
-  default_clock_speed = 200;
-#else
-  default_clock_speed = 333;
-#endif
+
 int sort_function(const void *dest_str_ptr, const void *src_str_ptr)
 {
   char *dest_str = *((char **)dest_str_ptr);
@@ -735,6 +750,18 @@ u32 gamepad_config_line_to_button[] =
 
 #endif
 
+u8 *scale_options[] =
+{
+#ifdef WIZ_BUILD
+  "unscaled 3:2", "scaled 3:2 (slower)",
+  "unscaled 3:2 (anti-tear)", "scaled 3:2 (anti-tear)"
+#else
+  "unscaled 3:2", "scaled 3:2", "fullscreen"
+#ifdef PSP_BUILD
+  " 16:9"
+#endif
+#endif
+};
 
 s32 load_game_config_file()
 {
@@ -835,7 +862,8 @@ s32 load_config_file()
       s32 menu_button = -1;
       file_read_array(config_file, file_options);
 
-      screen_scale = file_options[0] % 3;
+      screen_scale = file_options[0] %
+        (sizeof(scale_options) / sizeof(scale_options[0]));
       screen_filter = file_options[1] % 2;
       global_enable_audio = file_options[2] % 2;
 
@@ -1044,9 +1072,8 @@ void get_savestate_filename_noshot(u32 slot, u8 *name_buffer)
 
 u32 menu(u16 *original_screen)
 {
-  u32 clock_speed_number;
-  static u32 clock_speed_old = default_clock_speed;
   u8 print_buffer[81];
+  u32 clock_speed_number;
   u32 _current_option = 0;
   gui_action_type gui_action;
   menu_enum _current_menu = MAIN_MENU;
@@ -1093,6 +1120,17 @@ u32 menu(u16 *original_screen)
     "Does nothing."
   };
 
+  void menu_update_clock()
+  {
+    get_clock_speed_number();
+    if (clock_speed_number < 0 || clock_speed_number >=
+     sizeof(clock_speed_options) / sizeof(clock_speed_options[0]))
+    {
+      clock_speed = default_clock_speed;
+      get_clock_speed_number();
+    }
+  }
+
   void menu_exit()
   {
     if(!first_load)
@@ -1101,7 +1139,7 @@ u32 menu(u16 *original_screen)
 
   void menu_quit()
   {
-    get_clock_speed();
+    menu_get_clock_speed();
     save_config_file();
     quit();
   }
@@ -1121,6 +1159,7 @@ u32 menu(u16 *original_screen)
        return_value = 1;
        repeat = 0;
        reg[CHANGED_PC_STATUS] = 1;
+       menu_update_clock();
     }
     else
     {
@@ -1232,19 +1271,6 @@ u32 menu(u16 *original_screen)
   u8 *yes_no_options[] = { "no", "yes" };
   u8 *enable_disable_options[] = { "disabled", "enabled" };
 
-  u8 *scale_options[] =
-  {
-#ifdef WIZ_BUILD
-    "unscaled 3:2", "scaled 3:2 (slower)",
-    "unscaled 3:2 (anti-tear)", "scaled 3:2 (anti-tear)"
-#else
-    "unscaled 3:2", "scaled 3:2", "fullscreen"
-#ifdef PSP_BUILD
-    " 16:9"
-#endif
-#endif
-  };
-
   u8 *frameskip_options[] = { "automatic", "manual", "off" };
   u8 *frameskip_variation_options[] = { "uniform", "random" };
 
@@ -1265,29 +1291,6 @@ u32 menu(u16 *original_screen)
 #endif
 
   u8 *update_backup_options[] = { "Exit only", "Automatic" };
-
-#ifdef WIZ_BUILD
-  u8 *clock_speed_options[] =
-  {
-    "300MHz", "333MHz", "366MHz", "400MHz", "433MHz",
-    "466MHz", "500MHz", "533MHz", "566MHz", "600MHz",
-    "633MHz", "666MHz", "700MHz", "733MHz", "766MHz",
-    "800MHz", "833MHz", "866MHz", "900MHz"
-  };
-#elif defined(GP2X_BUILD)
-  u8 *clock_speed_options[] =
-  {
-    "150MHz", "160MHz", "170MHz", "180MHz", "190MHz",
-    "200MHz", "210MHz", "220MHz", "230MHz", "240MHz",
-    "250MHz", "260MHz", "270MHz", "280MHz", "290MHz"
-  };
-#else
-  u8 *clock_speed_options[] =
-  {
-    "33MHz", "66MHz", "100MHz", "133MHz", "166MHz", "200MHz", "233MHz",
-    "266MHz", "300MHz", "333MHz"
-  };
-#endif
 
   u8 *gamepad_config_buttons[] =
   {
@@ -1610,14 +1613,7 @@ u32 menu(u16 *original_screen)
     }
   }
 
-  get_clock_speed_number();
-  if (clock_speed_number < 0 || clock_speed_number >=
-   sizeof(clock_speed_options) / sizeof(clock_speed_options[0]))
-  {
-    clock_speed = default_clock_speed;
-    get_clock_speed_number();
-  }
-
+  menu_update_clock();
   video_resolution_large();
 
 #ifndef GP2X_BUILD
@@ -1766,18 +1762,8 @@ u32 menu(u16 *original_screen)
 
   set_gba_resolution(screen_scale);
   video_resolution_small();
-
-  get_clock_speed();
-  if (clock_speed != clock_speed_old)
-  {
-    printf("about to set CPU clock to %iMHz\n", clock_speed);
-  #ifdef PSP_BUILD
-    scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
-  #elif defined(GP2X_BUILD)
-    set_FCLK(clock_speed);
-  #endif
-    clock_speed_old = clock_speed;
-  }
+  menu_get_clock_speed();
+  set_clock_speed();
 
   SDL_PauseAudio(0);
 

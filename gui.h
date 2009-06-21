@@ -36,5 +36,13 @@ void get_savestate_filename_noshot(u32 slot, u8 *name_buffer);
 void get_savestate_filename(u32 slot, u8 *name_buffer);
 void get_savestate_snapshot(u8 *savestate_filename);
 
+#ifdef WIZ_BUILD
+  #define default_clock_speed 533
+#elif defined(GP2X_BUILD)
+  #define default_clock_speed 200
+#else
+  #define default_clock_speed 333
+#endif
+
 #endif
 

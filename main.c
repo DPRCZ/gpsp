@@ -326,6 +326,7 @@ int main(int argc, char *argv[])
         exit(-1);
       }
 
+      set_clock_speed();
       set_gba_resolution(screen_scale);
       video_resolution_small();
 
@@ -1042,3 +1043,19 @@ void printout(void *str, u32 val)
 {
   printf(str, val);
 }
+
+void set_clock_speed()
+{
+  static u32 clock_speed_old = default_clock_speed;
+  if (clock_speed != clock_speed_old)
+  {
+    printf("about to set CPU clock to %iMHz\n", clock_speed);
+  #ifdef PSP_BUILD
+    scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
+  #elif defined(GP2X_BUILD)
+    set_FCLK(clock_speed);
+  #endif
+    clock_speed_old = clock_speed;
+  }
+}
+

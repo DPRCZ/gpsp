@@ -197,6 +197,8 @@ u32 file_length(u8 *dummy, FILE *fp);
 
 void change_ext(u8 *src, u8 *buffer, u8 *extension);
 
+void set_clock_speed();
+
 #endif
 
 

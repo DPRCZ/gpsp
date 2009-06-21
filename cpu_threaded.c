@@ -3412,6 +3412,7 @@ void flush_translation_cache_ram()
    (ram_translation_ptr - ram_translation_cache) + 0x100);
 #endif
   ram_translation_ptr = ram_translation_cache;
+  last_ram_translation_ptr = ram_translation_cache;
   ram_block_tag_top = 0x0101;
   if(iwram_code_min != 0xFFFFFFFF)
   {
@@ -3467,6 +3468,7 @@ void flush_translation_cache_rom()
 #endif
 
   rom_translation_ptr = rom_translation_cache;
+  last_rom_translation_ptr = rom_translation_cache;
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
@@ -3479,6 +3481,7 @@ void flush_translation_cache_bios()
 
   bios_block_tag_top = 0x0101;
   bios_translation_ptr = bios_translation_cache;
+  last_bios_translation_ptr = bios_translation_cache;
   memset(bios_rom + 0x4000, 0, 0x4000);
 }
 

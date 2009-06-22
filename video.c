@@ -3464,26 +3464,37 @@ void flip_screen()
   }
 #ifdef GP2X_BUILD
   {
-    if((screen_scale == unscaled) &&
-     (resolution_width == small_resolution_width) &&
+    if((resolution_width == small_resolution_width) &&
      (resolution_height == small_resolution_height))
     {
-      SDL_Rect srect = {0, 0, 240, 160};
-      SDL_Rect drect = {40, 40, 240, 160};
-      SDL_BlitSurface(screen, &srect, hw_screen, &drect);
-    }
-    else if((screen_scale == scaled_aspect) &&
-     (resolution_width == small_resolution_width) &&
-     (resolution_height == small_resolution_height))
-    {
-      SDL_Rect drect = {0, 10, 0, 0};
-      SDL_BlitSurface(screen, NULL, hw_screen, &drect);
-    }
-    else
-    {
-      SDL_BlitSurface(screen, NULL, hw_screen, NULL);
+      switch (screen_scale)
+      {
+        case unscaled:
+        {
+          SDL_Rect srect = {0, 0, 240, 160};
+          SDL_Rect drect = {40, 40, 240, 160};
+          warm_cache_op_all(WOP_D_CLEAN);
+          SDL_BlitSurface(screen, &srect, hw_screen, &drect);
+          return;
+        }
+        case scaled_aspect:
+        {
+          SDL_Rect drect = {0, 10, 0, 0};
+          warm_cache_op_all(WOP_D_CLEAN);
+          SDL_BlitSurface(screen, NULL, hw_screen, &drect);
+          return;
+        }
+        case scaled_aspect_sw:
+        {
+          upscale_aspect(hw_screen->pixels, get_screen_pixels());
+          return;
+        }
+        case fullscreen:
+          break;
+      }
     }
     warm_cache_op_all(WOP_D_CLEAN);
+    SDL_BlitSurface(screen, NULL, hw_screen, NULL);
   }
 #else
   SDL_Flip(screen);
@@ -3816,7 +3827,7 @@ void video_resolution_small()
   SDL_GP2X_AllowGfxMemory(NULL, 0);
 
   w = 320; h = 240;
-  if (screen_scale != unscaled)
+  if (screen_scale == scaled_aspect || screen_scale == fullscreen)
   {
     w = small_resolution_width * video_scale;
     h = small_resolution_height * video_scale;
@@ -3824,9 +3835,12 @@ void video_resolution_small()
   if (screen_scale == scaled_aspect) h += 20;
   hw_screen = SDL_SetVideoMode(w, h, 16, SDL_HWSURFACE);
 
+  w = small_resolution_width * video_scale;
+  if (screen_scale == scaled_aspect_sw)
+    w = 320;
   screen = SDL_CreateRGBSurface(SDL_HWSURFACE,
-   small_resolution_width * video_scale, small_resolution_height *
-   video_scale, 16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
+   w, small_resolution_height * video_scale,
+   16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
 
   SDL_ShowCursor(0);
 

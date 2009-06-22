@@ -77,11 +77,15 @@ typedef enum
 {
   unscaled,
   scaled_aspect,
-#ifndef WIZ_BUILD
-  fullscreen,
-#endif
+#ifdef WIZ_BUILD
   unscaled_rot,
   scaled_aspect_rot,
+#elif defined(GP2X_BUILD)
+  fullscreen,
+  scaled_aspect_sw,
+#else
+  fullscreen,
+#endif
 } video_scale_type;
 
 typedef enum

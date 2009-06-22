@@ -756,7 +756,7 @@ u8 *scale_options[] =
   "unscaled 3:2", "scaled 3:2 (slower)",
   "unscaled 3:2 (anti-tear)", "scaled 3:2 (anti-tear)"
 #else
-  "unscaled 3:2", "scaled 3:2", "fullscreen"
+  "unscaled 3:2", "scaled 3:2", "fullscreen", "scaled 3:2 (software)"
 #ifdef PSP_BUILD
   " 16:9"
 #endif

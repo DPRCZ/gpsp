@@ -10,8 +10,12 @@ STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
 
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
             cheats.o zip.o cpu_threaded.z arm_stub.o video_blend.o            \
-            warm.o sys_cacheflush.o upscale_aspect.o
-BIN       = gpsp.gpe 
+            warm.o upscale_aspect.o
+ifeq ($(WIZ),1)
+BIN       = gpsp_wiz
+else
+BIN       = gpsp_gp2x
+endif
 
 # Platform specific definitions 
 
@@ -30,9 +34,6 @@ LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
 ifneq ($(WIZ),1)
 LIBS       += -static
 endif
-
-#CFLAGS     += -ggdb
-#LIBS       += -ggdb
 
 # Compilation:
 
@@ -54,7 +55,7 @@ endif
 	$(CC) $(ASFLAGS) $(INCLUDES) -c -o $@ $<
 
 all:	$(OBJS)
-	$(CC) $(OBJS) $(LIBS) -o $(BIN)  
+	$(CC) $(OBJS) $(LIBS) -o $(BIN)
 	$(STRIP) $(BIN)
 
 clean:

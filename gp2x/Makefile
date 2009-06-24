@@ -12,6 +12,7 @@ OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
             cheats.o zip.o cpu_threaded.z arm_stub.o video_blend.o            \
             warm.o upscale_aspect.o
 ifeq ($(WIZ),1)
+OBJS      += pollux_dpc_set.o
 BIN       = gpsp_wiz
 else
 BIN       = gpsp_gp2x

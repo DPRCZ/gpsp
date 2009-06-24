@@ -29,6 +29,7 @@
 #include "../common.h"
 #include "gp2x.h"
 #include "warm.h"
+#include "pollux_dpc_set.h"
 
 u32 gp2x_audio_volume = 74/2;
 u32 gpsp_gp2x_dev_audio = 0;
@@ -124,6 +125,9 @@ void wiz_lcd_set_portrait(int y)
   gpsp_gp2x_memregl[0x4004>>2] = y ? 0x013f00ef : 0x00ef013f;
   gpsp_gp2x_memregl[0x4000>>2] |= 1 << 3;
   old_y = y;
+
+  /* the above ioctl resets LCD timings, so set them here */
+  pollux_dpc_set(gpsp_gp2x_memregs, getenv("pollux_dpc_set"));
 }
 
 static void fb_video_exit()

@@ -12,6 +12,12 @@ not apply however).
 
 Changelog:
 
+0.9-2xb u6
+- Fixed clock and scaling config saving.
+- Fixed occasional crash on first ROM load on 1.1 firmware.
+- Added LCD timing setup code, which can be controlled through
+  'pollux_dpc_set' environment vatiable (see gpsp.gpe wrapper script).
+
 0.9-2xb u5
 - Added portrait drawing modes. They eliminate tearing but are slightly
   slower.

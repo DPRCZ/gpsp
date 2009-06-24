@@ -42,7 +42,9 @@
 #define WARM_CODE
 #include "warm.h"
 
-extern long init_module(void *, unsigned long, const char *);	/* provided by glibc */
+/* provided by glibc */
+extern long init_module(void *, unsigned long, const char *);
+extern long delete_module(const char *, unsigned int);
 
 static int warm_fd = -1;
 static int kernel_version;
@@ -68,6 +70,8 @@ static void sys_cacheflush(void *start, void *end)
 #endif
 }
 
+/* Those are here because system() occasionaly fails on Wiz
+ * with errno 12 for some unknown reason */
 static int manual_insmod_26(const char *fname, const char *opts)
 {
 	unsigned long len, read_len;
@@ -102,15 +106,16 @@ fail0:
 	return ret;
 }
 
+static int manual_rmmod(const char *name)
+{
+	return delete_module(name, O_NONBLOCK|O_EXCL);
+}
+
 int warm_init(void)
 {
 	struct utsname unm;
 	char buff1[32], buff2[128];
 	int ret;
-
-	warm_fd = open("/proc/warm", O_RDWR);
-	if (warm_fd >= 0)
-		return 0;
 
 	memset(&unm, 0, sizeof(unm));
 	uname(&unm);
@@ -120,6 +125,10 @@ int warm_init(void)
 		goto fail;
 	}
 	kernel_version = ((unm.release[0] - '0') << 4) | (unm.release[2] - '0');
+
+	warm_fd = open("/proc/warm", O_RDWR);
+	if (warm_fd >= 0)
+		return 0;
 
 	snprintf(buff1, sizeof(buff1), "warm_%s.%s", unm.release, kernel_version >= 0x26 ? "ko" : "o");
 	snprintf(buff2, sizeof(buff2), "/sbin/insmod %s verbose=1", buff1);
@@ -146,7 +155,8 @@ fail:
 
 void warm_finish(void)
 {
-	char cmd[64];
+	char name[32], cmd[64];
+	int ret;
 
 	if (warm_fd < 0)
 		return;
@@ -158,12 +168,17 @@ void warm_finish(void)
 		struct utsname unm;
 		memset(&unm, 0, sizeof(unm));
 		uname(&unm);
-		snprintf(cmd, sizeof(cmd), "/sbin/rmmod warm_%s", unm.release);
+		snprintf(name, sizeof(name), "warm_%s", unm.release);
 	}
 	else
-		strcpy(cmd, "/sbin/rmmod warm");
+		strcpy(name, "warm");
 
-	system(cmd);
+	snprintf(cmd, sizeof(cmd), "/sbin/rmmod %s", name);
+	ret = system(cmd);
+	if (ret != 0) {
+		fprintf(stderr, "system/rmmod failed: %d %d\n", ret, errno);
+		manual_rmmod(name);
+	}
 }
 
 int warm_cache_op_range(int op, void *addr, unsigned long size)

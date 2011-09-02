@@ -15,9 +15,9 @@ BIN       ?= gpsp.exe
 # Platform specific definitions 
 
 VPATH      += ..
-CFLAGS     += -DPC_BUILD
+CFLAGS     += -DPC_BUILD -m32
 INCLUDES   = -I${PREFIX}/include `sdl-config --cflags`
-LIBS       = -L${PREFIX}/lib `sdl-config --libs` -mconsole -lz
+LIBS       = -L${PREFIX}/lib `sdl-config --libs` -mconsole -lz -m32
 
 # Compilation:
 
@@ -27,7 +27,7 @@ LIBS       = -L${PREFIX}/lib `sdl-config --libs` -mconsole -lz
 	${CC} ${CFLAGS} ${INCLUDES} -c -o $@ $<
 
 %.o: %.S
-	${AS} -o $@ $<
+	${CC} ${CFLAGS} -c -o $@ $<
 
 all:	${OBJS}
 	${CC} ${OBJS} ${LIBS} -o ${BIN}  

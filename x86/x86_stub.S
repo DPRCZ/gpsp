@@ -18,6 +18,46 @@
 
 .align 4
 
+#ifndef _WIN32
+#define _x86_update_gba x86_update_gba
+#define _x86_indirect_branch_arm x86_indirect_branch_arm
+#define _x86_indirect_branch_thumb x86_indirect_branch_thumb
+#define _x86_indirect_branch_dual x86_indirect_branch_dual
+#define _execute_store_u8 execute_store_u8
+#define _execute_store_u16 execute_store_u16
+#define _execute_store_u32 execute_store_u32
+#define _execute_store_cpsr execute_store_cpsr
+#define _execute_arm_translate execute_arm_translate
+#define _step_debug_x86 step_debug_x86
+#define _memory_map_read memory_map_read
+#define _memory_map_write memory_map_write
+#define _reg reg
+#define _oam_update oam_update
+#define _iwram iwram
+#define _ewram ewram
+#define _vram vram
+#define _oam_ram oam_ram
+#define _bios_rom bios_rom
+#define _io_registers io_registers
+#define _spsr spsr
+
+#define _step_debug step_debug
+#define _update_gba update_gba
+#define _block_lookup_address_arm block_lookup_address_arm
+#define _block_lookup_address_thumb block_lookup_address_thumb
+#define _block_lookup_address_dual block_lookup_address_dual
+#define _write_io_register8 write_io_register8
+#define _write_io_register16 write_io_register16
+#define _write_io_register32 write_io_register32
+#define _palette_ram palette_ram
+#define _palette_ram_converted palette_ram_converted
+#define _flush_translation_cache_ram flush_translation_cache_ram
+#define _write_eeprom write_eeprom
+#define _write_backup write_backup
+#define _write_rtc write_rtc
+#define _execute_store_cpsr_body execute_store_cpsr_body
+#endif
+
 .global _x86_update_gba
 .global _x86_indirect_branch_arm
 .global _x86_indirect_branch_thumb
@@ -88,7 +128,7 @@
   mov REG_CPSR(%ebx), %edx
   shr $\shift, %edx
   and $0x01, %edx
-  mov %edx, _reg + \offset
+  mov %edx, \offset(%ebx)
 .endm
 
 .macro extract_flags
@@ -472,7 +512,7 @@ lookup_pc_arm:
 # eax: cycle counter
 
 _execute_arm_translate:
-  movl $_reg, %ebx            # load base register
+  movl (_reg), %ebx           # load base register
   extract_flags               # load flag variables
   movl %eax, %edi             # load edi cycle counter
 
@@ -496,6 +536,6 @@ _step_debug_x86:
 
 .comm _memory_map_read 0x8000
 .comm _memory_map_write 0x8000
-.comm _reg 0x100
+.comm _reg 4
 
 

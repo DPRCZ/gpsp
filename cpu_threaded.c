@@ -2837,7 +2837,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
         char buffer[256];                                                     \
         sprintf(buffer, "bad jump %x (%x) (%x)\n", pc, reg[REG_PC],           \
          last_instruction);                                                   \
-        printf(buffer);                                                       \
+        printf("%s", buffer);                                                 \
         quit();                                                               \
       }                                                                       \
       block_address = (u8 *)(-1);                                             \
@@ -3407,8 +3407,10 @@ void flush_translation_cache_ram()
   invalidate_icache_region(ram_translation_cache,
    (ram_translation_ptr - ram_translation_cache) + 0x100);
 #endif
-  ram_translation_ptr = ram_translation_cache;
+#ifdef ARM_ARCH
   last_ram_translation_ptr = ram_translation_cache;
+#endif
+  ram_translation_ptr = ram_translation_cache;
   ram_block_tag_top = 0x0101;
   if(iwram_code_min != 0xFFFFFFFF)
   {
@@ -3462,9 +3464,11 @@ void flush_translation_cache_rom()
   invalidate_icache_region(rom_translation_cache,
    rom_translation_ptr - rom_translation_cache + 0x100);
 #endif
+#ifdef ARM_ARCH
+  last_rom_translation_ptr = rom_translation_cache;
+#endif
 
   rom_translation_ptr = rom_translation_cache;
-  last_rom_translation_ptr = rom_translation_cache;
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
@@ -3474,10 +3478,12 @@ void flush_translation_cache_bios()
   invalidate_icache_region(bios_translation_cache,
    bios_translation_ptr - bios_translation_cache + 0x100);
 #endif
+#ifdef ARM_ARCH
+  last_bios_translation_ptr = bios_translation_cache;
+#endif
 
   bios_block_tag_top = 0x0101;
   bios_translation_ptr = bios_translation_cache;
-  last_bios_translation_ptr = bios_translation_cache;
   memset(bios_rom + 0x4000, 0, 0x4000);
 }
 

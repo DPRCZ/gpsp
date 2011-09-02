@@ -832,10 +832,10 @@ s32 load_config_file()
 {
   u8 config_path[512];
 
-  #if (defined(PSP_BUILD) || defined(ARM_ARCH)) && !defined(_WIN32_WCE)
-    sprintf(config_path, "%s/%s", main_path, GPSP_CONFIG_FILENAME);
-  #else
+  #if defined(_WIN32) || defined(_WIN32_WCE)
     sprintf(config_path, "%s\\%s", main_path, GPSP_CONFIG_FILENAME);
+  #else
+    sprintf(config_path, "%s/%s", main_path, GPSP_CONFIG_FILENAME);
   #endif
 
   file_open(config_file, config_path, read);

@@ -2403,7 +2403,7 @@ fill_line_builder(color32);
 
 #ifdef RENDER_COLOR16_NORMAL
 
-#ifndef GP2X_BUILD
+#ifndef ARM_ARCH
 
 void expand_normal(u16 *screen_ptr, u32 start, u32 end)
 {
@@ -2432,7 +2432,7 @@ void expand_normal(u16 *screen_ptr, u32 start, u32 end)
 #endif
 
 
-#ifndef GP2X_BUILD
+#ifndef ARM_ARCH
 
 void expand_blend(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)

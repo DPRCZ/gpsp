@@ -20,7 +20,7 @@ endif
 
 # Platform specific definitions 
 
-VPATH      += ..
+VPATH      += .. ../arm
 CFLAGS     += -DARM_ARCH -DGP2X_BUILD
 ifeq ($(WIZ),1)
 CFLAGS     += -DWIZ_BUILD

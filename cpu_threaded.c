@@ -190,13 +190,9 @@ extern u8 bit_count[256];
 
 #include "psp/mips_emit.h"
 
-#elif defined(GP2X_BUILD)
+#elif defined(ARM_ARCH)
 
-#include "gp2x/arm_emit.h"
-
-#elif defined(GIZ_BUILD)
-
-#include "giz/arm_emit.h"
+#include "arm/arm_emit.h"
 
 #else
 

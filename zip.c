@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <zlib.h>
 #include "common.h"
+#include <zlib.h>
 
 #define ZIP_BUFFER_SIZE (128 * 1024)
 

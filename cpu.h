@@ -112,6 +112,7 @@ extern u32 last_instruction;
 u32 function_cc step_debug(u32 pc, u32 cycles);
 u32 execute_arm(u32 cycles);
 void raise_interrupt(irq_type irq_raised);
+void set_cpu_mode(cpu_mode_type new_mode);
 
 u32 function_cc execute_load_u8(u32 address);
 u32 function_cc execute_load_u16(u32 address);

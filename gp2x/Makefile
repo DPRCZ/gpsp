@@ -4,7 +4,7 @@
 
 # Global definitions
 
-PREFIX  = /opt/open2x/gcc-4.1.1-glibc-2.3.6
+PREFIX    ?= /opt/open2x/gcc-4.1.1-glibc-2.3.6
 CC        = $(PREFIX)/bin/arm-open2x-linux-gcc
 STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
 
@@ -17,6 +17,8 @@ BIN       = gpsp_wiz
 else
 BIN       = gpsp_gp2x
 endif
+
+-include Makefile.local
 
 # Platform specific definitions 
 

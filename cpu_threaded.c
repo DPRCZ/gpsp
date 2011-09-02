@@ -21,7 +21,6 @@
 // - stm reglist writeback when base is in the list needs adjustment
 // - block memory needs psr swapping and user mode reg swapping
 
-#include <stdio.h>
 #include "common.h"
 
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];

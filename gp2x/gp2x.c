@@ -1,6 +1,6 @@
-/*  Parts used from cpuctrl */
-/*  cpuctrl for GP2X
-    Copyright (C) 2005  Hermes/PS2Reality
+/*  
+    Parts used from cpuctrl, Copyright (C) 2005  Hermes/PS2Reality
+    Portions Copyright (C) 2009 notaz
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,14 +19,14 @@
 */
 
 
-#define _BSD_SOURCE
 #define _GNU_SOURCE
+#include "../common.h"
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "../common.h"
+#include <ctype.h>
 #include "gp2x.h"
 #include "warm.h"
 #include "pollux_dpc_set.h"
@@ -230,10 +230,9 @@ void gp2x_init()
 
   gpsp_gp2x_dev = open("/dev/mem",   O_RDWR);
   gpsp_gp2x_dev_audio = open("/dev/mixer", O_RDWR);
-  gpsp_gp2x_memregl =
-   (unsigned long  *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,
+  gpsp_gp2x_memregl = (u32 *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,
    gpsp_gp2x_dev, 0xc0000000);
-  gpsp_gp2x_memregs = (unsigned short *)gpsp_gp2x_memregl;
+  gpsp_gp2x_memregs = (u16 *)gpsp_gp2x_memregl;
   warm_init();
 #ifdef WIZ_BUILD
   gpsp_gp2x_gpiodev = open("/dev/GPIO", O_RDONLY);

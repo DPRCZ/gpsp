@@ -21,7 +21,6 @@
 // - stm reglist writeback when base is in the list needs adjustment
 // - block memory needs psr swapping and user mode reg swapping
 
-#include <stdio.h>
 #include "common.h"
 
 u32 memory_region_access_read_u8[16];

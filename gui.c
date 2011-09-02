@@ -16,6 +16,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "common.h"
+#include "font.h"
+
 #ifndef _WIN32_WCE
 
 #include <sys/stat.h>
@@ -24,9 +27,6 @@
 #include <dirent.h>
 
 #endif
-
-#include "common.h"
-#include "font.h"
 
 #define MAX_PATH 1024
 

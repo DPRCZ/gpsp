@@ -225,6 +225,9 @@ typedef u32 fixed16_16;
 #include "zip.h"
 #include "cheats.h"
 
+#ifdef ARM_ARCH
+  #include "arm/warm.h"
+#endif
 
 #ifdef PSP_BUILD
   #define printf pspDebugScreenPrintf

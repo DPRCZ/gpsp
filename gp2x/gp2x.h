@@ -1,8 +1,6 @@
 #ifndef GP2X_H
 #define GP2X_H
 
-#include "warm.h"
-
 enum
 {
   GP2X_UP       = 1 << 0,

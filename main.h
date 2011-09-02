@@ -111,6 +111,10 @@ extern u32 virtual_frame_count;
 extern u32 max_frameskip;
 extern u32 num_skipped_frames;
 
+#else
+
+u32 file_length(u8 *dummy, FILE *fp);
+
 #endif
 
 
@@ -124,12 +128,6 @@ extern u32 num_skipped_frames;
 
 #endif
 
-
-#ifdef PC_BUILD
-
-u32 file_length(u8 *dummy, FILE *fp);
-
-#endif
 
 #define count_timer(timer_number)                                             \
   timer[timer_number].reload = 0x10000 - value;                               \

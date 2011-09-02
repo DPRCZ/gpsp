@@ -25,11 +25,7 @@ u32 global_enable_audio = 1;
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
 
-#if defined(GP2X_BUILD) || defined(TAVI_BUILD)
 u32 sound_frequency = 44100;
-#else
-u32 sound_frequency = 44100;
-#endif
 
 SDL_AudioSpec sound_settings;
 SDL_mutex *sound_mutex;

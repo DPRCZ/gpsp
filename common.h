@@ -157,30 +157,6 @@
 
   #define file_tag_type FILE *
 
-  // The ARM arch uses SDL, and SDL requires you to know what resolution
-  // you want. Define the resolution for ARM arch builds here.
-  // Placed in common.h for use with video.c and gui.c.
-
-  #ifndef PC_BUILD
-
-  #define GP2X_SCREEN_WIDTH 320
-  #define GP2X_SCREEN_HEIGHT 240
-
-  #define GIZ_SCREEN_WIDTH 320
-  #define GIZ_SCREEN_HEIGHT 240
-
-  #ifdef GP2X_BUILD
-    #define SDL_SCREEN_WIDTH GP2X_SCREEN_WIDTH
-    #define SDL_SCREEN_HEIGHT GP2X_SCREEN_HEIGHT
-
-  #elif defined(GIZ_BUILD)
-
-    #define SDL_SCREEN_WIDTH GIZ_SCREEN_WIDTH
-    #define SDL_SCREEN_HEIGHT GIZ_SCREEN_HEIGHT
-  #endif
-
-  #endif
-
 #endif
 
 // These must be variables, not constants.

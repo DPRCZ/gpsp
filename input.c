@@ -374,7 +374,7 @@ u32 gamepad_config_map[16] =
   BUTTON_ID_MENU                // Vol middle
 };
 
-extern u32 gp2x_fps_debug;
+extern u32 fps_debug;
 extern u32 gpsp_gp2x_joystick_read(void);
 
 gui_action_type get_gui_input()
@@ -577,7 +577,7 @@ u32 update_input()
         break;
 
       case BUTTON_ID_FPS:
-        gp2x_fps_debug ^= 1;
+        fps_debug ^= 1;
         break;
     }
 

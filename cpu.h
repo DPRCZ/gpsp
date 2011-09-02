@@ -133,18 +133,19 @@ s32 translate_block_arm(u32 pc, translation_region_type translation_region,
 s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
  u32 smc_enable);
 
-#ifdef GP2X_BUILD
-#define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4 * 5)
-#define RAM_TRANSLATION_CACHE_SIZE (1024 * 384 * 2)
-#define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128 * 2)
-#define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024 * 32)
-
-#else
+#ifdef PSP_BUILD
 
 #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4)
 #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384)
 #define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128)
 #define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024)
+
+#else
+
+#define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4 * 5)
+#define RAM_TRANSLATION_CACHE_SIZE (1024 * 384 * 2)
+#define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128 * 2)
+#define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024 * 32)
 
 #endif
 

@@ -25,10 +25,6 @@
 
 #endif
 
-#ifndef GP2X_BUILD
-#include "gp2x/cpuctrl.h"
-#endif
-
 #include "common.h"
 #include "font.h"
 
@@ -38,7 +34,7 @@
 
 #ifdef GP2X_BUILD
 
-#define FILE_LIST_ROWS ((int)((SDL_SCREEN_HEIGHT - 40) / FONT_HEIGHT))
+#define FILE_LIST_ROWS 20
 #define FILE_LIST_POSITION 5
 #define DIR_LIST_POSITION 260
 
@@ -52,23 +48,17 @@
 
 #ifdef PSP_BUILD
 
+#define COLOR_BG            color16(2, 8, 10)
+
 #define color16(red, green, blue)                                             \
   (blue << 11) | (green << 5) | red                                           \
 
 #else
 
-#define color16(red, green, blue)                                             \
-  (red << 11) | (green << 5) | blue                                           \
-
-#endif
-
-#ifdef GP2X_BUILD
-
 #define COLOR_BG            color16(0, 0, 0)
 
-#else
-
-#define COLOR_BG            color16(2, 8, 10)
+#define color16(red, green, blue)                                             \
+  (red << 11) | (green << 5) | blue                                           \
 
 #endif
 

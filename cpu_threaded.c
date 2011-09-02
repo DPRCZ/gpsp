@@ -3481,11 +3481,7 @@ void flush_translation_cache_bios()
   memset(bios_rom + 0x4000, 0, 0x4000);
 }
 
-#ifdef GP2X_BUILD
-  #define cache_dump_prefix "/mnt/nand/"
-#else
-  #define cache_dump_prefix ""
-#endif
+#define cache_dump_prefix ""
 
 void dump_translation_cache()
 {

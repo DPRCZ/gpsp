@@ -41,13 +41,13 @@ debug_state current_debug_state = RUN;
 frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
 u32 random_skip = 0;
+u32 fps_debug = 0;
 
 #ifdef GP2X_BUILD
 u32 frameskip_value = 2;
 
 u64 frame_count_initial_timestamp = 0;
 u64 last_frame_interval_timestamp;
-u32 gp2x_fps_debug = 0;
 
 void gp2x_init(void);
 void gp2x_quit(void);
@@ -197,8 +197,6 @@ int main(int argc, char *argv[])
   sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 0,
    vblank_interrupt_handler, NULL);
   sceKernelEnableSubIntr(PSP_VBLANK_INT, 0);
-#elif !defined(GP2X_BUILD)
-  freopen("CON", "wb", stdout);
 #endif
 
   extern char *cpu_mode_names[];
@@ -613,7 +611,7 @@ u32 update_gba()
 
           update_gbc_sound(cpu_ticks);
 
-          if(gp2x_fps_debug)
+          if(fps_debug)
           {
             char print_buffer[32];
             sprintf(print_buffer, "%d (%d)", fps, frames_drawn);

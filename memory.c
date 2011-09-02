@@ -3115,9 +3115,7 @@ void bios_region_read_allow()
 
 void bios_region_read_protect()
 {
-#ifdef GP2X_BUILD
   memory_map_read[0] = NULL;
-#endif
 }
 
 

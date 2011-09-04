@@ -33,7 +33,8 @@ void gpsp_plat_quit(void);
 u32 gpsp_plat_joystick_read(void);
 u32 gpsp_plat_buttons_to_cursor(u32 buttons);
 
-extern u32 button_plat_mask_to_config[];
+#define PLAT_BUTTON_COUNT 16
+extern u32 button_plat_mask_to_config[PLAT_BUTTON_COUNT];
 
 void gp2x_sound_volume(u32 volume_up);
 void gp2x_quit();

@@ -39,7 +39,7 @@ static u32 gp2x_audio_volume = 74/2;
 static volatile u16 *gpsp_gp2x_memregs;
 static volatile u32 *gpsp_gp2x_memregl;
 
-u32 button_plat_mask_to_config[] =
+u32 button_plat_mask_to_config[PLAT_BUTTON_COUNT] =
 {
   GP2X_UP,
   GP2X_LEFT,
@@ -59,7 +59,7 @@ u32 button_plat_mask_to_config[] =
   GP2X_VOL_MIDDLE
 };
 
-u32 gamepad_config_map[16] =
+u32 gamepad_config_map[PLAT_BUTTON_COUNT] =
 {
   BUTTON_ID_UP,                 // Up
   BUTTON_ID_LEFT,               // Left

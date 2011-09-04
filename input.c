@@ -454,7 +454,7 @@ u32 update_input()
   handled_buttons = (last_buttons ^ buttons) & buttons;
   last_buttons = buttons;
 
-  for(i = 0; i < 16; i++)
+  for(i = 0; i < PLAT_BUTTON_COUNT; i++)
   {
     if(handled_buttons & button_plat_mask_to_config[i])
       button_id = gamepad_config_map[i];

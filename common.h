@@ -251,4 +251,8 @@ typedef u32 fixed16_16;
 //  #define STDIO_DEBUG
 #endif
 
+#ifdef PND_BUILD
+  #include "pandora/pnd.h"
+#endif
+
 #endif

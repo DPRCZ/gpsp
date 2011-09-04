@@ -102,6 +102,16 @@ const u32 screen_pitch = 320;
 #define get_screen_pitch()                                                    \
   screen_pitch                                                                \
 
+#elif defined(PND_BUILD)
+
+static u16 *screen_pixels = NULL;
+
+#define get_screen_pixels()                                                   \
+  screen_pixels                                                               \
+
+#define get_screen_pitch()                                                    \
+  resolution_width                                                            \
+
 #else
 
 #ifdef GP2X_BUILD
@@ -3392,6 +3402,13 @@ no_clean:
   screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
 }
 
+#elif defined(PND_BUILD)
+
+void flip_screen()
+{
+  screen_pixels = fb_flip_screen();
+}
+
 #else
 
 #define integer_scale_copy_2()                                                \
@@ -3601,7 +3618,7 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
-#elif defined(WIZ_BUILD)
+#elif defined(WIZ_BUILD) || defined(PND_BUILD)
 
 void init_video()
 {
@@ -3792,6 +3809,42 @@ void clear_screen(u16 color)
   u32 col = ((u32)color << 16) | color;
   u32 *p = gpsp_gp2x_screen;
   int c = 320*240/2;
+  while (c-- > 0)
+    *p++ = col;
+}
+
+#elif defined(PND_BUILD)
+
+void video_resolution_large()
+{
+  resolution_width = 400;
+  resolution_height = 272;
+
+  fb_set_mode(400, 272, 1, 15, screen_filter);
+  flip_screen();
+  clear_screen(0);
+}
+
+void video_resolution_small()
+{
+  resolution_width = 240;
+  resolution_height = 160;
+
+  fb_set_mode(240, 160, 4, screen_scale, screen_filter);
+  flip_screen();
+  clear_screen(0);
+}
+
+void set_gba_resolution(video_scale_type scale)
+{
+  screen_scale = scale;
+}
+
+void clear_screen(u16 color)
+{
+  u32 col = ((u32)color << 16) | color;
+  u32 *p = (u32 *)get_screen_pixels();
+  int c = resolution_width * resolution_height / 2;
   while (c-- > 0)
     *p++ = col;
 }

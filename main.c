@@ -203,9 +203,6 @@ int main(int argc, char *argv[])
 #endif
 
   getcwd(main_path, 512);
-  load_config_file();
-
-  gamepak_filename[0] = 0;
 
 #ifdef PSP_BUILD
   delay_us(2500000);
@@ -214,6 +211,9 @@ int main(int argc, char *argv[])
 #ifndef PC_BUILD
   gpsp_plat_init();
 #endif
+  load_config_file();
+
+  gamepak_filename[0] = 0;
 
   init_video();
 
@@ -235,7 +235,11 @@ int main(int argc, char *argv[])
     debug_screen_printl("a860e8c0b6d573d191e4ec7db1b1e4f6                  ");
     debug_screen_printl("                                                  ");
     debug_screen_printl("When you do get it name it gba_bios.bin and put it");
+#ifdef PND_BUILD
+    debug_screen_printl("in <CD card>/pandora/appdata/gpsp/ .              ");
+#else
     debug_screen_printl("in the same directory as gpSP.                    ");
+#endif
     debug_screen_printl("                                                  ");
     debug_screen_printl("Press any button to exit.                         ");
 

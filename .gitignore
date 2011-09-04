@@ -2,3 +2,6 @@
 *.u
 *.z
 gpsp.gpe
+tags
+cscope.out
+pandora/linux

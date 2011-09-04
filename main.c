@@ -758,9 +758,7 @@ void synchronize()
 */
 }
 
-#endif
-
-#ifdef GP2X_BUILD
+#else
 
 u32 real_frame_count = 0;
 u32 virtual_frame_count = 0;
@@ -776,14 +774,11 @@ void synchronize()
   u64 time_delta;
 
   get_ticks_us(&new_ticks);
-  time_delta = new_ticks - last_screen_timestamp;
-  last_screen_timestamp = new_ticks;
 
   skip_next_frame = 0;
   virtual_frame_count++;
 
-  real_frame_count = ((new_ticks -
-    frame_count_initial_timestamp) * 3) / 50000;
+  real_frame_count = (new_ticks * 3) / 50000;
 
   if(real_frame_count >= virtual_frame_count)
   {
@@ -799,6 +794,14 @@ void synchronize()
       virtual_frame_count = real_frame_count;
       num_skipped_frames = 0;
     }
+  }
+  else if (synchronize_flag)
+  {
+#if defined(PND_BUILD)
+    fb_wait_vsync();
+#elif !defined(GP2X_BUILD) // sleeping on GP2X is a bad idea
+    delay_us((u64)virtual_frame_count * 50000 / 3 - new_ticks + 2);
+#endif
   }
 
   frames++;
@@ -840,76 +843,11 @@ void synchronize()
 
   interval_skipped_frames += skip_next_frame;
 
-  if(!synchronize_flag)
-    print_string("--FF--", 0xFFFF, 0x000, 0, 0);
-}
-
-#endif
-
-
-#ifdef PC_BUILD
-
-u32 ticks_needed_total = 0;
-float us_needed = 0.0;
-u32 frames = 0;
-const u32 frame_interval = 60;
-
-void synchronize()
-{
-  u64 new_ticks;
-  u64 time_delta;
+#if !defined(GP2X_BUILD) && !defined(PND_BUILD)
   char char_buffer[64];
-
-  get_ticks_us(&new_ticks);
-  time_delta = new_ticks - last_screen_timestamp;
-  last_screen_timestamp = new_ticks;
-  ticks_needed_total += time_delta;
-
-  skip_next_frame = 0;
-
-  if((time_delta < frame_speed) && synchronize_flag)
-  {
-    delay_us(frame_speed - time_delta);
-  }
-
-  frames++;
-
-  if(frames == frame_interval)
-  {
-    us_needed = (float)ticks_needed_total / frame_interval;
-    ticks_needed_total = 0;
-    frames = 0;
-  }
-
-  if(current_frameskip_type == manual_frameskip)
-  {
-    frameskip_counter = (frameskip_counter + 1) %
-     (frameskip_value + 1);
-    if(random_skip)
-    {
-      if(frameskip_counter != (rand() % (frameskip_value + 1)))
-        skip_next_frame = 1;
-    }
-    else
-    {
-      if(frameskip_counter)
-        skip_next_frame = 1;
-    }
-  }
-
-  if(synchronize_flag == 0)
-    print_string("--FF--", 0xFFFF, 0x000, 0, 0);
-
-  sprintf(char_buffer, "gpSP: %.1fms %.1ffps", us_needed / 1000.0,
-   1000000.0 / us_needed);
+  sprintf(char_buffer, "gpSP: %2d (%2d) fps", fps, frames_drawn);
   SDL_WM_SetCaption(char_buffer, "gpSP");
-
-/*
-    sprintf(char_buffer, "%02d %02d %06d %07d", frameskip, (u32)ms_needed,
-     ram_translation_ptr - ram_translation_cache, rom_translation_ptr -
-     rom_translation_cache);
-    print_string(char_buffer, 0xFFFF, 0x0000, 0, 0);
-*/
+#endif
 }
 
 #endif

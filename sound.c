@@ -31,10 +31,10 @@ SDL_AudioSpec sound_settings;
 SDL_mutex *sound_mutex;
 SDL_cond *sound_cv;
 
-#ifndef PSP_BUILD
-u32 audio_buffer_size_number = 7;
-#else
+#ifdef PSP_BUILD
 u32 audio_buffer_size_number = 1;
+#else
+u32 audio_buffer_size_number = 8;
 #endif
 
 u32 audio_buffer_size;
@@ -44,6 +44,8 @@ u32 sound_buffer_base = 0;
 
 u32 sound_last_cpu_ticks = 0;
 fixed16_16 gbc_sound_tick_step;
+
+u32 sound_exit_flag;
 
 // Queue 1, 2, or 4 samples to the top of the DS FIFO, wrap around circularly
 
@@ -481,13 +483,10 @@ void update_gbc_sound(u32 cpu_ticks)
         real_frame_count = 0;
         virtual_frame_count = 0;
       }
-#endif
-
-/*
-
-#ifdef GP2X_BUILD
+#else
       if(current_frameskip_type == auto_frameskip)
       {
+/*
         u64 current_ticks;
         u64 next_ticks;
         get_ticks_us(&current_ticks);
@@ -496,12 +495,13 @@ void update_gbc_sound(u32 cpu_ticks)
         delay_us(next_ticks - current_ticks);
 
         get_ticks_us(&frame_count_initial_timestamp);
-        real_frame_count = 0;
-        virtual_frame_count = 0;
+*/
+        /* prevent frameskip, or it will cause more audio,
+	 * then more waiting here, then frame skip again, ... */
+        num_skipped_frames = 100;
       }
 #endif
 
-*/
     }
   }
   if(sound_on == 1)
@@ -624,7 +624,7 @@ void sound_callback(void *userdata, Uint8 *stream, int length)
   SDL_LockMutex(sound_mutex);
 
   while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) <
-   length)
+   length && !sound_exit_flag)
   {
     SDL_CondWait(sound_cv, sound_mutex);
   }
@@ -744,18 +744,18 @@ void sound_exit()
   gbc_sound_buffer_index =
    (sound_buffer_base + audio_buffer_size) % BUFFER_SIZE;
   SDL_PauseAudio(1);
+  sound_exit_flag = 1;
   SDL_CondSignal(sound_cv);
+  SDL_CloseAudio();
 }
 
 void init_sound()
 {
 #ifdef PSP_BUILD
   audio_buffer_size = (audio_buffer_size_number * 1024) + 3072;
-#elif defined(TAVI_BUILD) || defined(ARM_ARCH)
+#else
   audio_buffer_size = 16 << audio_buffer_size_number;
 //  audio_buffer_size = 16384;
-#else
-  audio_buffer_size = 16384;
 #endif
 
   SDL_AudioSpec desired_spec =
@@ -779,10 +779,19 @@ void init_sound()
 
   reset_sound();
 
-  SDL_OpenAudio(&desired_spec, &sound_settings);
-  sound_frequency = sound_settings.freq;
   sound_mutex = SDL_CreateMutex();
   sound_cv = SDL_CreateCond();
+
+  SDL_OpenAudio(&desired_spec, &sound_settings);
+  sound_frequency = sound_settings.freq;
+  audio_buffer_size = sound_settings.size;
+  u32 i = audio_buffer_size / 16;
+  for (audio_buffer_size_number = 0; i && (i & 1) == 0; i >>= 1)
+    audio_buffer_size_number++;
+#ifndef PSP_BUILD
+  printf("audio: freq %d, size %d\n", sound_frequency, audio_buffer_size);
+#endif
+
   SDL_PauseAudio(0);
 }
 

@@ -1756,6 +1756,7 @@ u32 menu(u16 *original_screen)
   set_clock_speed();
 
   SDL_PauseAudio(0);
+  num_skipped_frames = 100;
 
   return return_value;
 }

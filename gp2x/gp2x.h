@@ -24,11 +24,16 @@ enum
   GP2X_VOL_UP   = 1 << 23,
   GP2X_PUSH     = 1 << 27,
 #endif
+  GP2X_VOL_MIDDLE = (1 << 24), // fake, menu enter
 };
 
+void gpsp_plat_init(void);
+void gpsp_plat_quit(void);
 
-extern u32 gpsp_gp2x_dev_audio;
-extern u32 gpsp_gp2x_dev;
+u32 gpsp_plat_joystick_read(void);
+u32 gpsp_plat_buttons_to_cursor(u32 buttons);
+
+extern u32 button_plat_mask_to_config[];
 
 void gp2x_sound_volume(u32 volume_up);
 void gp2x_quit();

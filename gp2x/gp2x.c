@@ -28,16 +28,56 @@
 #include <unistd.h>
 #include <ctype.h>
 #include "gp2x.h"
-#include "warm.h"
 #include "pollux_dpc_set.h"
 
-u32 gp2x_audio_volume = 74/2;
-u32 gpsp_gp2x_dev_audio = 0;
-u32 gpsp_gp2x_dev = 0;
-u32 gpsp_gp2x_gpiodev = 0;
+static u32 gpsp_gp2x_dev_audio;
+static u32 gpsp_gp2x_dev;
+static u32 gpsp_gp2x_gpiodev;
+
+static u32 gp2x_audio_volume = 74/2;
 
 static volatile u16 *gpsp_gp2x_memregs;
 static volatile u32 *gpsp_gp2x_memregl;
+
+u32 button_plat_mask_to_config[] =
+{
+  GP2X_UP,
+  GP2X_LEFT,
+  GP2X_DOWN,
+  GP2X_RIGHT,
+  GP2X_START,
+  GP2X_SELECT,
+  GP2X_L,
+  GP2X_R,
+  GP2X_A,
+  GP2X_B,
+  GP2X_X,
+  GP2X_Y,
+  GP2X_VOL_DOWN,
+  GP2X_VOL_UP,
+  GP2X_PUSH,
+  GP2X_VOL_MIDDLE
+};
+
+u32 gamepad_config_map[16] =
+{
+  BUTTON_ID_UP,                 // Up
+  BUTTON_ID_LEFT,               // Left
+  BUTTON_ID_DOWN,               // Down
+  BUTTON_ID_RIGHT,              // Right
+  BUTTON_ID_START,              // Start
+  BUTTON_ID_SELECT,             // Select
+  BUTTON_ID_L,                  // Ltrigger
+  BUTTON_ID_R,                  // Rtrigger
+  BUTTON_ID_FPS,                // A
+  BUTTON_ID_A,                  // B
+  BUTTON_ID_B,                  // X
+  BUTTON_ID_MENU,               // Y
+  BUTTON_ID_VOLDOWN,            // Vol down
+  BUTTON_ID_VOLUP,              // Vol up
+  BUTTON_ID_FPS,                // Push
+  BUTTON_ID_MENU                // Vol middle
+};
 
 #ifdef WIZ_BUILD
 #include <linux/fb.h>
@@ -224,7 +264,7 @@ static int get_romdir(char *buff, size_t size)
   return r;
 }
 
-void gp2x_init()
+void gpsp_plat_init(void)
 {
   char buff[256];
 
@@ -245,7 +285,7 @@ void gp2x_init()
   gp2x_sound_volume(1);
 }
 
-void gp2x_quit()
+void gpsp_plat_quit(void)
 {
   char buff1[256], buff2[256];
 
@@ -292,7 +332,7 @@ void gp2x_sound_volume(u32 volume_up)
   ioctl(gpsp_gp2x_dev_audio, SOUND_MIXER_WRITE_PCM, &volume);
 }
 
-u32 gpsp_gp2x_joystick_read(void)
+u32 gpsp_plat_joystick_read(void)
 {
 #ifdef WIZ_BUILD
   u32 value = 0;
@@ -321,6 +361,40 @@ u32 gpsp_gp2x_joystick_read(void)
   return ~((gpsp_gp2x_memregs[0x1184 >> 1] & 0xFF00) | value |
    (gpsp_gp2x_memregs[0x1186 >> 1] << 16));
 #endif
+}
+
+u32 gpsp_plat_buttons_to_cursor(u32 buttons)
+{
+  gui_action_type new_button = CURSOR_NONE;
+
+  if(buttons & GP2X_A)
+    new_button = CURSOR_BACK;
+
+  if(buttons & GP2X_X)
+    new_button = CURSOR_EXIT;
+
+  if(buttons & GP2X_B)
+    new_button = CURSOR_SELECT;
+
+  if(buttons & GP2X_UP)
+    new_button = CURSOR_UP;
+
+  if(buttons & GP2X_DOWN)
+    new_button = CURSOR_DOWN;
+
+  if(buttons & GP2X_LEFT)
+    new_button = CURSOR_LEFT;
+
+  if(buttons & GP2X_RIGHT)
+    new_button = CURSOR_RIGHT;
+
+  if(buttons & GP2X_L)
+    new_button = CURSOR_L;
+
+  if(buttons & GP2X_R)
+    new_button = CURSOR_R;
+
+  return new_button;
 }
 
 // Fout = (m * Fin) / (p * 2^s)

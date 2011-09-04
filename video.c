@@ -3903,17 +3903,18 @@ void blit_to_screen(u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y)
   u32 pitch = get_screen_pitch();
   u16 *dest_ptr = get_screen_pixels() + dest_x + (dest_y * pitch);
 
+  s32 w1 = dest_x + w > pitch ? pitch - dest_x : w;
   u16 *src_ptr = src;
-  u32 line_skip = pitch - w;
-  u32 x, y;
+  s32 x, y;
 
   for(y = 0; y < h; y++)
   {
-    for(x = 0; x < w; x++, src_ptr++, dest_ptr++)
+    for(x = 0; x < w1; x++)
     {
-      *dest_ptr = *src_ptr;
+      dest_ptr[x] = src_ptr[x];
     }
-    dest_ptr += line_skip;
+    src_ptr += w;
+    dest_ptr += pitch;
   }
 }
 

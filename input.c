@@ -347,40 +347,14 @@ void init_input()
 #endif
 
 
-#ifdef GP2X_BUILD
-
-// GP2X SDL requires a user made input method
-#include <sys/mman.h>
-#include <sys/ioctl.h>
-#include "gp2x/gp2x.h"
-
-u32 gamepad_config_map[16] =
-{
-  BUTTON_ID_UP,                 // Up
-  BUTTON_ID_LEFT,               // Left
-  BUTTON_ID_DOWN,               // Down
-  BUTTON_ID_RIGHT,              // Right
-  BUTTON_ID_START,              // Start
-  BUTTON_ID_SELECT,             // Select
-  BUTTON_ID_L,                  // Ltrigger
-  BUTTON_ID_R,                  // Rtrigger
-  BUTTON_ID_FPS,                // A
-  BUTTON_ID_A,                  // B
-  BUTTON_ID_B,                  // X
-  BUTTON_ID_MENU,               // Y
-  BUTTON_ID_VOLDOWN,            // Vol down
-  BUTTON_ID_VOLUP,              // Vol up
-  BUTTON_ID_FPS,                // Push
-  BUTTON_ID_MENU                // Vol middle
-};
+#if defined(GP2X_BUILD) || defined(PND_BUILD)
 
 extern u32 fps_debug;
-extern u32 gpsp_gp2x_joystick_read(void);
 
 gui_action_type get_gui_input()
 {
   gui_action_type new_button = CURSOR_NONE;
-  u32 buttons = gpsp_gp2x_joystick_read();
+  u32 buttons = gpsp_plat_joystick_read();
   u32 new_buttons;
 
   static u32 last_buttons = 0;
@@ -391,34 +365,7 @@ gui_action_type get_gui_input()
   new_buttons = (last_buttons ^ buttons) & buttons;
   last_buttons = buttons;
 
-  if(new_buttons & GP2X_A)
-    new_button = CURSOR_BACK;
-
-  if(new_buttons & GP2X_X)
-    new_button = CURSOR_EXIT;
-
-  if(new_buttons & GP2X_B)
-    new_button = CURSOR_SELECT;
-
-  if(new_buttons & GP2X_UP)
-    new_button = CURSOR_UP;
-
-  if(new_buttons & GP2X_DOWN)
-    new_button = CURSOR_DOWN;
-
-  if(new_buttons & GP2X_LEFT)
-    new_button = CURSOR_LEFT;
-
-  if(new_buttons & GP2X_RIGHT)
-    new_button = CURSOR_RIGHT;
-
-  if(new_buttons & GP2X_L)
-    new_button = CURSOR_L;
-
-  if(new_buttons & GP2X_R)
-    new_button = CURSOR_R;
-
-
+  new_button = gpsp_plat_buttons_to_cursor(new_buttons);
   if(new_button != CURSOR_NONE)
   {
     get_ticks_us(&button_repeat_timestamp);
@@ -459,28 +406,6 @@ gui_action_type get_gui_input()
   return new_button;
 }
 
-#define GP2X_VOL_MIDDLE (1 << 24)
-
-u32 button_gp2x_mask_to_config[] =
-{
-  GP2X_UP,
-  GP2X_LEFT,
-  GP2X_DOWN,
-  GP2X_RIGHT,
-  GP2X_START,
-  GP2X_SELECT,
-  GP2X_L,
-  GP2X_R,
-  GP2X_A,
-  GP2X_B,
-  GP2X_X,
-  GP2X_Y,
-  GP2X_VOL_DOWN,
-  GP2X_VOL_UP,
-  GP2X_PUSH,
-  GP2X_VOL_MIDDLE
-};
-
 u32 button_id_to_gba_mask[] =
 {
   BUTTON_UP,
@@ -506,9 +431,10 @@ u32 update_input()
   u32 handled_buttons;
   u32 button_id;
   u32 new_key = 0;
-  u32 buttons = gpsp_gp2x_joystick_read();
+  u32 buttons = gpsp_plat_joystick_read();
   u32 i;
 
+#ifdef GP2X_BUILD
   if((buttons & GP2X_VOL_DOWN) && (buttons & GP2X_VOL_UP))
   {
     buttons &= ~(GP2X_VOL_DOWN | GP2X_VOL_UP);
@@ -522,12 +448,15 @@ u32 update_input()
     buttons |= GP2X_VOL_MIDDLE;
   }
 
-  handled_buttons = ((last_buttons ^ buttons) | GP2X_VOL_DOWN | GP2X_VOL_UP) & buttons;
+  last_buttons &= ~(GP2X_VOL_DOWN | GP2X_VOL_UP);
+#endif
+
+  handled_buttons = (last_buttons ^ buttons) & buttons;
   last_buttons = buttons;
 
   for(i = 0; i < 16; i++)
   {
-    if(handled_buttons & button_gp2x_mask_to_config[i])
+    if(handled_buttons & button_plat_mask_to_config[i])
       button_id = gamepad_config_map[i];
     else
       button_id = BUTTON_ID_NONE;
@@ -564,10 +493,10 @@ u32 update_input()
       }
 
       case BUTTON_ID_FASTFORWARD:
-        print_string("FASTFORWARD", 0xFFFF, 0x0000, 0, 50);
         synchronize_flag ^= 1;
         return 0;
 
+#ifdef GP2X_BUILD
       case BUTTON_ID_VOLUP:
         gp2x_sound_volume(1);
         break;
@@ -575,13 +504,14 @@ u32 update_input()
       case BUTTON_ID_VOLDOWN:
         gp2x_sound_volume(0);
         break;
+#endif
 
       case BUTTON_ID_FPS:
         fps_debug ^= 1;
         break;
     }
 
-    if(buttons & button_gp2x_mask_to_config[i])
+    if(buttons & button_plat_mask_to_config[i])
     {
       button_id = gamepad_config_map[i];
       if(button_id < BUTTON_ID_MENU)

@@ -43,18 +43,10 @@ u32 global_cycles_per_instruction = 1;
 u32 random_skip = 0;
 u32 fps_debug = 0;
 
-#ifdef GP2X_BUILD
 u32 frameskip_value = 2;
 
-u64 frame_count_initial_timestamp = 0;
 u64 last_frame_interval_timestamp;
 
-void gp2x_init(void);
-void gp2x_quit(void);
-#else
-
-u32 frameskip_value = 4;
-#endif
 u32 skip_next_frame = 0;
 
 u32 frameskip_counter = 0;
@@ -219,9 +211,8 @@ int main(int argc, char *argv[])
   delay_us(2500000);
 #endif
 
-#ifdef GP2X_BUILD
-  // Overclocking GP2X and MMU patch goes here
-  gp2x_init();
+#ifndef PC_BUILD
+  gpsp_plat_init();
 #endif
 
   init_video();
@@ -296,7 +287,7 @@ int main(int argc, char *argv[])
   {
     if(load_gamepak(argv[1]) == -1)
     {
-#ifdef PC_BUILD
+#ifndef PSP_BUILD
       printf("Failed to load gamepak %s, exiting.\n", load_filename);
 #endif
       exit(-1);
@@ -318,7 +309,7 @@ int main(int argc, char *argv[])
     {
       if(load_gamepak(load_filename) == -1)
       {
-#ifdef PC_BUILD
+#ifndef PSP_BUILD
         printf("Failed to load gamepak %s, exiting.\n", load_filename);
 #endif
         exit(-1);
@@ -340,10 +331,6 @@ int main(int argc, char *argv[])
 #ifdef PSP_BUILD
   execute_arm_translate(execute_cycles);
 #else
-
-#ifdef GP2X_BUILD
-  get_ticks_us(&frame_count_initial_timestamp);
-#endif
 
 /*  u8 current_savestate_filename[512];
   get_savestate_filename_noshot(savestate_slot,
@@ -614,9 +601,11 @@ u32 update_gba()
           if(fps_debug)
           {
             char print_buffer[32];
-            sprintf(print_buffer, "%d (%d)", fps, frames_drawn);
+            sprintf(print_buffer, "%2d (%2d)", fps, frames_drawn);
             print_string(print_buffer, 0xFFFF, 0x000, 0, 0);
           }
+          if(!synchronize_flag)
+            print_string("-FF-", 0xFFFF, 0x000, 216, 0);
 
           update_screen();
 
@@ -670,10 +659,6 @@ u32 update_gba()
   return execute_cycles;
 }
 
-u64 last_screen_timestamp = 0;
-u32 frame_speed = 15000;
-
-
 #ifdef PSP_BUILD
 
 u32 real_frame_count = 0;
@@ -693,7 +678,6 @@ void synchronize()
 
   if(!synchronize_flag)
   {
-    print_string("--FF--", 0xFFFF, 0x000, 0, 0);
     used_frameskip = 4;
     virtual_frame_count = real_frame_count - 1;
   }
@@ -868,8 +852,8 @@ void quit()
 #else
   SDL_Quit();
 
-#ifdef GP2X_BUILD
-  gp2x_quit();
+#ifndef PC_BUILD
+  gpsp_plat_quit();
 #endif
 
   exit(0);
@@ -928,7 +912,7 @@ void delay_us(u32 us_count)
 
 void get_ticks_us(u64 *ticks_return)
 {
-  *ticks_return = (SDL_GetTicks() * 1000);
+  *ticks_return = (u64)SDL_GetTicks() * 1000;
 }
 
 #else

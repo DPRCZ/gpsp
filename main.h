@@ -106,28 +106,16 @@ void main_read_savestate(file_tag_type savestate_file);
 
 u32 file_length(u8 *filename, s32 dummy);
 
-extern u32 real_frame_count;
-extern u32 virtual_frame_count;
-extern u32 max_frameskip;
-extern u32 num_skipped_frames;
-
 #else
 
 u32 file_length(u8 *dummy, FILE *fp);
 
 #endif
 
-
-#ifdef GP2X_BUILD
-
-extern u64 frame_count_initial_timestamp;
 extern u32 real_frame_count;
 extern u32 virtual_frame_count;
 extern u32 max_frameskip;
 extern u32 num_skipped_frames;
-
-#endif
-
 
 #define count_timer(timer_number)                                             \
   timer[timer_number].reload = 0x10000 - value;                               \

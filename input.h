@@ -82,13 +82,9 @@ gui_action_type get_gui_input_fs_hold(u32 button_id);
 void input_write_mem_savestate(file_tag_type savestate_file);
 void input_read_savestate(file_tag_type savestate_file);
 
-extern u32 gamepad_config_map[16];
+extern u32 gamepad_config_map[];
 extern u32 global_enable_analog;
 extern u32 analog_sensitivity_level;
-
-#if defined(GP2X_BUILD)
-u32 gpsp_gp2x_joystick_read(void);
-#endif
 
 #endif
 

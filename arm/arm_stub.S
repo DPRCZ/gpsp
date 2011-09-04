@@ -171,13 +171,20 @@
 #define restore_flags()                                                      ;\
   msr cpsr_f, reg_flags                                                      ;\
 
+#ifdef __ARM_EABI__
+  @ must align stack
+  #define call_c_saved_regs r2, r3, r12, lr
+#else
+  #define call_c_saved_regs r3, r12, lr
+#endif
+
 @ Calls a C function - all caller save registers which are important to the
 @ dynarec and to returning from this function are saved.
 
 #define call_c_function(function)                                            ;\
-  stmdb sp!, { r3, r12, lr }                                                 ;\
+  stmdb sp!, { call_c_saved_regs }                                           ;\
   bl function                                                                ;\
-  ldmia sp!, { r3, r12, lr }                                                 ;\
+  ldmia sp!, { call_c_saved_regs }                                           ;\
 
 
 @ Update the GBA hardware (video, sound, input, etc)

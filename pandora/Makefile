@@ -14,10 +14,9 @@ BIN       = gpsp
 # Platform specific definitions 
 
 VPATH      += .. ../arm
-CFLAGS     += -DARM_ARCH -DPND_BUILD
-CFLAGS     += -funsigned-char
+CFLAGS     += -DARM_ARCH -DPND_BUILD -Wall
 CFLAGS     += -mcpu=cortex-a8 -mtune=cortex-a8 -mfloat-abi=softfp -ffast-math
-CFLAGS     += -fno-common -fno-builtin
+CFLAGS     += -fno-common
 CFLAGS     += -ggdb
 CFLAGS     += -O2
 
@@ -28,10 +27,12 @@ LIBS       += -ldl -lpthread -lz
 
 # Compilation:
 
+all:	$(BIN)
+
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all:	$(BIN)
+cpu.o cpu_threaded.o: CFLAGS += -Wno-unused-variable -Wno-unused-label
 
 $(BIN): $(OBJS)
 	$(CC) $(OBJS) $(LIBS) -o $(BIN)

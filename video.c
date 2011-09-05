@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#define WANT_FONT_BITS
 #include "font.h"
 
 #ifdef PSP_BUILD
@@ -129,11 +130,11 @@ const u32 video_scale = 1;
 
 #endif
 
-void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
- u32 enable_flags, u32 dispcnt, u32 bldcnt, tile_layer_render_struct
+static void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
+ u32 enable_flags, u32 dispcnt, u32 bldcnt, const tile_layer_render_struct
  *layer_renderers);
-void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
- u32 enable_flags, u32 dispcnt, u32 bldcnt, bitmap_layer_render_struct
+static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
+ u32 enable_flags, u32 dispcnt, u32 bldcnt, const bitmap_layer_render_struct
  *layer_renderers);
 
 #define no_op                                                                 \
@@ -1011,23 +1012,18 @@ void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
 
 
 
-
-// Map widths and heights
-
-u32 map_widths[] = { 256, 512, 256, 512 };
-u32 map_heights[] = { 256, 256, 512, 512 };
+static const u32 map_widths[] = { 256, 512, 256, 512 };
 
 // Build text scanline rendering functions.
 
 #define render_scanline_text_builder(combine_op, alpha_op)                    \
-void render_scanline_text_##combine_op##_##alpha_op(u32 layer,                \
+static void render_scanline_text_##combine_op##_##alpha_op(u32 layer,         \
  u32 start, u32 end, void *scanline)                                          \
 {                                                                             \
   render_scanline_extra_variables_##combine_op##_##alpha_op(text);            \
   u32 bg_control = io_registers[REG_BG0CNT + layer];                          \
   u32 map_size = (bg_control >> 14) & 0x03;                                   \
   u32 map_width = map_widths[map_size];                                       \
-  u32 map_height = map_heights[map_size];                                     \
   u32 horizontal_offset =                                                     \
    (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;                   \
   u32 vertical_offset = (io_registers[REG_VCOUNT] +                           \
@@ -1278,7 +1274,6 @@ void render_scanline_affine_##combine_op##_##alpha_op(u32 layer,              \
   u32 bg_control = io_registers[REG_BG0CNT + layer];                          \
   u32 current_pixel;                                                          \
   s32 source_x, source_y;                                                     \
-  u32 vcount = io_registers[REG_VCOUNT];                                      \
   u32 pixel_x, pixel_y;                                                       \
   u32 layer_offset = (layer - 2) * 8;                                         \
   s32 dx, dy;                                                                 \
@@ -1287,7 +1282,7 @@ void render_scanline_affine_##combine_op##_##alpha_op(u32 layer,              \
   u32 map_pitch = map_size + 4;                                               \
   u8 *map_base = vram + (((bg_control >> 8) & 0x1F) * (1024 * 2));            \
   u8 *tile_base = vram + (((bg_control >> 2) & 0x03) * (1024 * 16));          \
-  u8 *tile_ptr;                                                               \
+  u8 *tile_ptr = NULL;                                                        \
   u32 map_offset, last_map_offset = (u32)-1;                                  \
   u32 i;                                                                      \
   render_scanline_dest_##alpha_op *dest_ptr =                                 \
@@ -1475,13 +1470,11 @@ render_scanline_affine_builder(transparent, alpha);
 // Build bitmap scanline rendering functions.
 
 #define render_scanline_bitmap_builder(type, alpha_op, width, height)         \
-void render_scanline_bitmap_##type##_##alpha_op(u32 start, u32 end,           \
+static void render_scanline_bitmap_##type##_##alpha_op(u32 start, u32 end,    \
  void *scanline)                                                              \
 {                                                                             \
-  u32 bg_control = io_registers[REG_BG2CNT];                                  \
   u32 current_pixel;                                                          \
   s32 source_x, source_y;                                                     \
-  u32 vcount = io_registers[REG_VCOUNT];                                      \
   s32 pixel_x, pixel_y;                                                       \
                                                                               \
   s32 dx = (s16)io_registers[REG_BG2PA];                                      \
@@ -1542,7 +1535,7 @@ render_scanline_bitmap_builder(mode5, normal, 160, 128);
 
 // Structs containing functions to render the layers for each mode, for
 // each render type.
-tile_layer_render_struct tile_mode_renderers[3][4] =
+static const tile_layer_render_struct tile_mode_renderers[3][4] =
 {
   {
     tile_layer_render_functions(text), tile_layer_render_functions(text),
@@ -1558,7 +1551,7 @@ tile_layer_render_struct tile_mode_renderers[3][4] =
   }
 };
 
-bitmap_layer_render_struct bitmap_mode_renderers[3] =
+static const bitmap_layer_render_struct bitmap_mode_renderers[3] =
 {
   bitmap_layer_render_functions(mode3),
   bitmap_layer_render_functions(mode4),
@@ -1567,11 +1560,11 @@ bitmap_layer_render_struct bitmap_mode_renderers[3] =
 
 
 #define render_scanline_layer_functions_tile()                                \
-  tile_layer_render_struct *layer_renderers =                                 \
+  const tile_layer_render_struct *layer_renderers =                           \
    tile_mode_renderers[dispcnt & 0x07]                                        \
 
 #define render_scanline_layer_functions_bitmap()                              \
-  bitmap_layer_render_struct *layer_renderers =                               \
+  const bitmap_layer_render_struct *layer_renderers =                         \
    bitmap_mode_renderers + ((dispcnt & 0x07) - 3)                             \
 
 
@@ -1583,8 +1576,8 @@ bitmap_layer_render_struct bitmap_mode_renderers[3] =
   + (tile_size_##color_depth * ((obj_width - 8) / 8))                         \
 
 
-// Adjust the obj's starting point if it goes too far off the left edge of    \
-// the screen.                                                                \
+// Adjust the obj's starting point if it goes too far off the left edge of
+// the screen.
 
 #define obj_tile_right_offset_noflip(color_depth)                             \
   tile_ptr += (partial_tile_offset / 8) * tile_size_##color_depth             \
@@ -1844,14 +1837,13 @@ bitmap_layer_render_struct bitmap_mode_renderers[3] =
 
 #define obj_render_affine(combine_op, color_depth, alpha_op, map_space)       \
 {                                                                             \
-  s16 *params = oam_ram + (((obj_attribute_1 >> 9) & 0x1F) * 16);             \
+  s16 *params = (s16 *)oam_ram + (((obj_attribute_1 >> 9) & 0x1F) * 16);      \
   s32 dx = params[3];                                                         \
   s32 dmx = params[7];                                                        \
   s32 dy = params[11];                                                        \
   s32 dmy = params[15];                                                       \
   s32 source_x, source_y;                                                     \
   s32 tile_x, tile_y;                                                         \
-  u32 tile_offset;                                                            \
   u32 tile_map_offset;                                                        \
   s32 middle_x;                                                               \
   s32 middle_y;                                                               \
@@ -1910,12 +1902,14 @@ bitmap_layer_render_struct bitmap_mode_renderers[3] =
   }                                                                           \
 }                                                                             \
 
-u32 obj_width_table[] = { 8, 16, 32, 64, 16, 32, 32, 64, 8, 8, 16, 32 };
-u32 obj_height_table[] = { 8, 16, 32, 64, 8, 8, 16, 32, 16, 32, 32, 64 };
+static const u32 obj_width_table[] =
+  { 8, 16, 32, 64, 16, 32, 32, 64, 8, 8, 16, 32 };
+static const u32 obj_height_table[] =
+  { 8, 16, 32, 64, 8, 8, 16, 32, 16, 32, 32, 64 };
 
-u8 obj_priority_list[5][160][128];
-u32 obj_priority_count[5][160];
-u32 obj_alpha_count[160];
+static u8 obj_priority_list[5][160][128];
+static u32 obj_priority_count[5][160];
+static u32 obj_alpha_count[160];
 
 
 // Build obj rendering functions
@@ -1934,11 +1928,11 @@ u32 obj_alpha_count[160];
 
 
 #define render_scanline_obj_extra_variables_color()                           \
-  u32 dest;                                                                   \
   u32 pixel_combine = color_combine_mask(4) | (1 << 8)                        \
 
 #define render_scanline_obj_extra_variables_alpha_obj(map_space)              \
   render_scanline_obj_extra_variables_color();                                \
+  u32 dest;                                                                   \
   if((pixel_combine & 0x00000200) == 0)                                       \
   {                                                                           \
     render_scanline_obj_color32_##map_space(priority, start, end, scanline);  \
@@ -1953,7 +1947,8 @@ u32 obj_alpha_count[160];
 
 #define render_scanline_obj_extra_variables_partial_alpha(map_space)          \
   render_scanline_obj_extra_variables_color();                                \
-  u32 base_pixel_combine = pixel_combine                                      \
+  u32 base_pixel_combine = pixel_combine;                                     \
+  u32 dest                                                                    \
 
 #define render_scanline_obj_extra_variables_copy(type)                        \
   u32 bldcnt = io_registers[REG_BLDCNT];                                      \
@@ -2063,7 +2058,7 @@ u32 obj_alpha_count[160];
 
 #define render_scanline_obj_builder(combine_op, alpha_op, map_space,          \
  partial_alpha_op)                                                            \
-void render_scanline_obj_##alpha_op##_##map_space(u32 priority,               \
+static void render_scanline_obj_##alpha_op##_##map_space(u32 priority,        \
  u32 start, u32 end, render_scanline_dest_##alpha_op *scanline)               \
 {                                                                             \
   render_scanline_obj_extra_variables_##alpha_op(map_space);                  \
@@ -2127,7 +2122,7 @@ render_scanline_obj_builder(copy, copy_bitmap, 2D, no_partial_alpha);
 
 
 
-void order_obj(u32 video_mode)
+static void order_obj(u32 video_mode)
 {
   s32 obj_num, priority, row;
   s32 obj_x, obj_y;
@@ -2135,14 +2130,8 @@ void order_obj(u32 video_mode)
   s32 obj_width, obj_height;
   u32 obj_priority;
   u32 obj_attribute_0, obj_attribute_1, obj_attribute_2;
-  s32 vcount = io_registers[REG_VCOUNT];
-  u32 partial_tile_run, partial_tile_offset;
-  u32 pixel_run;
   u32 current_count;
   u16 *oam_ptr = oam_ram + 508;
-  u16 *dest_ptr;
-  u8 *tile_base = vram + 0x10000;
-  u8 *tile_ptr;
 
   for(priority = 0; priority < 5; priority++)
   {
@@ -2234,7 +2223,7 @@ void order_obj(u32 video_mode)
 u32 layer_order[16];
 u32 layer_count;
 
-u32 order_layers(u32 layer_flags)
+static void order_layers(u32 layer_flags)
 {
   s32 priority, layer_number;
   layer_count = 0;
@@ -2279,7 +2268,7 @@ u32 order_layers(u32 layer_flags)
 #define fill_line_color_color32()                                             \
 
 #define fill_line_builder(type)                                               \
-void fill_line_##type(u16 color, render_scanline_dest_##type *dest_ptr,       \
+static void fill_line_##type(u16 color, render_scanline_dest_##type *dest_ptr,\
  u32 start, u32 end)                                                          \
 {                                                                             \
   fill_line_color_##type();                                                   \
@@ -2479,7 +2468,7 @@ void expand_blend(u32 *screen_src_ptr, u16 *screen_dest_ptr,
 
 // Blend scanline with white.
 
-void expand_darken(u16 *screen_src_ptr, u16 *screen_dest_ptr,
+static void expand_darken(u16 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
   u32 pixel_top;
@@ -2495,7 +2484,7 @@ void expand_darken(u16 *screen_src_ptr, u16 *screen_dest_ptr,
 
 // Blend scanline with black.
 
-void expand_brighten(u16 *screen_src_ptr, u16 *screen_dest_ptr,
+static void expand_brighten(u16 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
   u32 pixel_top;
@@ -2517,7 +2506,7 @@ void expand_brighten(u16 *screen_src_ptr, u16 *screen_dest_ptr,
 // Expand scanline such that if both top and bottom pass it's alpha,
 // if only top passes it's as specified, and if neither pass it's normal.
 
-void expand_darken_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
+static void expand_darken_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
   s32 blend = 16 - (io_registers[REG_BLDY] & 0x1F);
@@ -2541,7 +2530,7 @@ void expand_darken_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
 }
 
 
-void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
+static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
   s32 blend = io_registers[REG_BLDY] & 0x1F;
@@ -2776,7 +2765,7 @@ void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
 
 // Renders an entire scanline from 0 to 240, based on current color mode.
 
-void render_scanline_tile(u16 *scanline, u32 dispcnt)
+static void render_scanline_tile(u16 *scanline, u32 dispcnt)
 {
   u32 current_layer;
   u32 layer_order_pos;
@@ -2787,9 +2776,8 @@ void render_scanline_tile(u16 *scanline, u32 dispcnt)
    render_condition_alpha, render_condition_fade, 0, 240);
 }
 
-void render_scanline_bitmap(u16 *scanline, u32 dispcnt)
+static void render_scanline_bitmap(u16 *scanline, u32 dispcnt)
 {
-  u32 bldcnt = io_registers[REG_BLDCNT];
   render_scanline_layer_functions_bitmap();
   u32 current_layer;
   u32 layer_order_pos;
@@ -2908,8 +2896,8 @@ void render_scanline_bitmap(u16 *scanline, u32 dispcnt)
 // Render all of the BG and OBJ in a tiled scanline from start to end ONLY if
 // enable_flag allows that layer/OBJ. Also conditionally render color effects.
 
-void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
- u32 enable_flags, u32 dispcnt, u32 bldcnt, tile_layer_render_struct
+static void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
+ u32 enable_flags, u32 dispcnt, u32 bldcnt, const tile_layer_render_struct
  *layer_renderers)
 {
   u32 current_layer;
@@ -2925,8 +2913,8 @@ void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
 // Render the BG and OBJ in a bitmap scanline from start to end ONLY if
 // enable_flag allows that layer/OBJ. Also conditionally render color effects.
 
-void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
- u32 enable_flags, u32 dispcnt, u32 bldcnt, bitmap_layer_render_struct
+static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
+ u32 enable_flags, u32 dispcnt, u32 bldcnt, const bitmap_layer_render_struct
  *layer_renderers)
 {
   u32 current_layer;
@@ -2970,7 +2958,7 @@ void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
 #define window_coords(window_number)                                          \
   u32 window_##window_number##_x1, window_##window_number##_x2;               \
   u32 window_##window_number##_y1, window_##window_number##_y2;               \
-  u32 window_##window_number##_enable;                                        \
+  u32 window_##window_number##_enable = 0;                                    \
   window_##window_number##_y1 =                                               \
    io_registers[REG_WIN##window_number##V] >> 8;                              \
   window_##window_number##_y2 =                                               \
@@ -3181,7 +3169,7 @@ void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline,
   }                                                                           \
 
 #define render_scanline_window_builder(type)                                  \
-void render_scanline_window_##type(u16 *scanline, u32 dispcnt)                \
+static void render_scanline_window_##type(u16 *scanline, u32 dispcnt)         \
 {                                                                             \
   u32 vcount = io_registers[REG_VCOUNT];                                      \
   u32 winout = io_registers[REG_WINOUT];                                      \
@@ -3219,7 +3207,6 @@ void render_scanline_window_##type(u16 *scanline, u32 dispcnt)                \
     /* Just OBJ windows */                                                    \
     case 0x04:                                                                \
     {                                                                         \
-      u32 window_obj_enable = winout >> 8;                                    \
       render_window_clip_obj(type, 0, 240);                                   \
       break;                                                                  \
     }                                                                         \
@@ -3227,7 +3214,6 @@ void render_scanline_window_##type(u16 *scanline, u32 dispcnt)                \
     /* Window 0 and OBJ window */                                             \
     case 0x05:                                                                \
     {                                                                         \
-      u32 window_obj_enable = winout >> 8;                                    \
       u32 winin = io_registers[REG_WININ];                                    \
       window_coords(0);                                                       \
       render_window_multi(type, 0, obj);                                      \
@@ -3237,7 +3223,6 @@ void render_scanline_window_##type(u16 *scanline, u32 dispcnt)                \
     /* Window 1 and OBJ window */                                             \
     case 0x06:                                                                \
     {                                                                         \
-      u32 window_obj_enable = winout >> 8;                                    \
       u32 winin = io_registers[REG_WININ];                                    \
       window_coords(1);                                                       \
       render_window_multi(type, 1, obj);                                      \
@@ -3247,7 +3232,6 @@ void render_scanline_window_##type(u16 *scanline, u32 dispcnt)                \
     /* Window 0, 1, and OBJ window */                                         \
     case 0x07:                                                                \
     {                                                                         \
-      u32 window_obj_enable = winout >> 8;                                    \
       u32 winin = io_registers[REG_WININ];                                    \
       window_coords(0);                                                       \
       window_coords(1);                                                       \
@@ -3260,7 +3244,7 @@ void render_scanline_window_##type(u16 *scanline, u32 dispcnt)                \
 render_scanline_window_builder(tile);
 render_scanline_window_builder(bitmap);
 
-u32 active_layers[6] = { 0x1F, 0x17, 0x1C, 0x14, 0x14, 0x14 };
+static const u32 active_layers[6] = { 0x1F, 0x17, 0x1C, 0x14, 0x14, 0x14 };
 
 u32 small_resolution_width = 240;
 u32 small_resolution_height = 160;
@@ -3270,11 +3254,9 @@ void update_scanline()
 {
   u32 pitch = get_screen_pitch();
   u32 dispcnt = io_registers[REG_DISPCNT];
-  u32 display_flags = (dispcnt >> 8) & 0x1F;
   u32 vcount = io_registers[REG_VCOUNT];
   u16 *screen_offset = get_screen_pixels() + (vcount * pitch);
   u32 video_mode = dispcnt & 0x07;
-  u32 current_layer;
 
   // If OAM has been modified since the last scanline has been updated then
   // reorder and reprofile the OBJ lists.
@@ -3383,6 +3365,8 @@ void flip_screen()
   {
     switch(screen_scale)
     {
+      case unscaled:
+        break;
       case scaled_aspect:
         upscale_aspect(gpsp_gp2x_screen, screen_pixels);
         break;
@@ -3914,15 +3898,8 @@ void set_gba_resolution(video_scale_type scale)
   if(screen_scale != scale)
   {
     screen_scale = scale;
-    switch(scale)
-    {
-      case unscaled:
-      case scaled_aspect:
-      case fullscreen:
-        small_resolution_width = 240 * video_scale;
-        small_resolution_height = 160 * video_scale;
-        break;
-    }
+    small_resolution_width = 240 * video_scale;
+    small_resolution_height = 160 * video_scale;
   }
 }
 

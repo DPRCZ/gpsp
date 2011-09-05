@@ -25,7 +25,7 @@ u32 num_cheats;
 void decrypt_gsa_code(u32 *address_ptr, u32 *value_ptr, cheat_variant_enum
  cheat_variant)
 {
-  u32 i, i2, code_position;
+  u32 i;
   u32 address = *address_ptr;
   u32 value = *value_ptr;
   u32 r = 0xc6ef3720;
@@ -58,11 +58,11 @@ void decrypt_gsa_code(u32 *address_ptr, u32 *value_ptr, cheat_variant_enum
   *value_ptr = value;
 }
 
-void add_cheats(u8 *cheats_filename)
+void add_cheats(char *cheats_filename)
 {
   FILE *cheats_file;
-  u8 current_line[256];
-  u8 *name_ptr;
+  char current_line[256];
+  char *name_ptr;
   u32 *cheat_code_ptr;
   u32 address, value;
   u32 num_cheat_lines;
@@ -110,8 +110,8 @@ void add_cheats(u8 *cheats_filename)
         cheats[num_cheats].cheat_name[CHEAT_NAME_LENGTH - 1] = 0;
         cheat_name_length = strlen(cheats[num_cheats].cheat_name);
         if(cheat_name_length &&
-         (cheats[num_cheats].cheat_name[cheat_name_length - 1] == '\n') ||
-         (cheats[num_cheats].cheat_name[cheat_name_length - 1] == '\r'))
+         ((cheats[num_cheats].cheat_name[cheat_name_length - 1] == '\n') ||
+          (cheats[num_cheats].cheat_name[cheat_name_length - 1] == '\r')))
         {
           cheats[num_cheats].cheat_name[cheat_name_length - 1] = 0;
           cheat_name_length--;
@@ -381,6 +381,9 @@ void process_cheats()
 
         case CHEAT_TYPE_GAMESHARK_V3:
           process_cheat_gs3(cheats + i);
+          break;
+
+        default:
           break;
       }
     }

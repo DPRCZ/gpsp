@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#define IN_MEMORY_C
 #include "common.h"
 
 // This table is configured for sequential access on system defaults
@@ -170,7 +171,7 @@ flash_size_type flash_size = FLASH_SIZE_64KB;
 
 u8 read_backup(u32 address)
 {
-  u8 value;
+  u8 value = 0;
 
   if(backup_type == BACKUP_NONE)
     backup_type = BACKUP_SRAM;
@@ -327,6 +328,9 @@ void function_cc write_eeprom(u32 address, u32 value)
       {
         eeprom_mode = EEPROM_BASE_MODE;
       }
+      break;
+
+    default:
       break;
   }
 }
@@ -1636,6 +1640,9 @@ void function_cc write_rtc(u32 address, u32 value)
                       case RTC_WRITE_STATUS:
                         rtc_status = rtc_data[0];
                         break;
+
+                      default:
+                        break;
                     }
                   }
                 }
@@ -1670,6 +1677,9 @@ void function_cc write_rtc(u32 address, u32 value)
                   }
                 }
               }
+              break;
+
+            default:
               break;
           }
         }
@@ -1897,7 +1907,7 @@ u32 save_backup(char *name)
 
     if(file_check_valid(backup_file))
     {
-      u32 backup_size;
+      u32 backup_size = 0;
 
       switch(backup_type)
       {
@@ -1920,6 +1930,9 @@ u32 save_backup(char *name)
             backup_size = 0x200;
           else
             backup_size = 0x2000;
+          break;
+
+        default:
           break;
       }
 
@@ -1952,7 +1965,7 @@ void update_backup_force()
 
 #define CONFIG_FILENAME "game_config.txt"
 
-u8 *skip_spaces(u8 *line_ptr)
+char *skip_spaces(char *line_ptr)
 {
   while(*line_ptr == ' ')
     line_ptr++;
@@ -1960,10 +1973,10 @@ u8 *skip_spaces(u8 *line_ptr)
   return line_ptr;
 }
 
-s32 parse_config_line(u8 *current_line, u8 *current_variable, u8 *current_value)
+s32 parse_config_line(char *current_line, char *current_variable, char *current_value)
 {
-  u8 *line_ptr = current_line;
-  u8 *line_ptr_new;
+  char *line_ptr = current_line;
+  char *line_ptr_new;
 
   if((current_line[0] == 0) || (current_line[0] == '#'))
     return -1;
@@ -1994,14 +2007,12 @@ s32 parse_config_line(u8 *current_line, u8 *current_variable, u8 *current_value)
   return 0;
 }
 
-s32 load_game_config(u8 *gamepak_title, u8 *gamepak_code, u8 *gamepak_maker)
+s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_maker)
 {
-  u8 current_line[256];
-  u8 current_variable[256];
-  u8 current_value[256];
-  u8 config_path[512];
-  u8 *line_ptr;
-  u32 fgets_value;
+  char current_line[256];
+  char current_variable[256];
+  char current_value[256];
+  char config_path[512];
   FILE *config_file;
 
   idle_loop_target_pc = 0xFFFFFFFF;
@@ -2069,7 +2080,7 @@ s32 load_game_config(u8 *gamepak_title, u8 *gamepak_code, u8 *gamepak_maker)
             }
 
             if(!strcmp(current_variable, "iwram_stack_optimize") &&
-              !strcmp(current_value, "no"))
+              !strcmp(current_value, "no\0")) /* \0 for broken toolchain workaround */
             {
                 iwram_stack_optimize = 0;
             }
@@ -2145,16 +2156,16 @@ s32 load_gamepak_raw(char *name)
   return -1;
 }
 
-u8 gamepak_title[13];
-u8 gamepak_code[5];
-u8 gamepak_maker[3];
-u8 gamepak_filename[512];
+char gamepak_title[13];
+char gamepak_code[5];
+char gamepak_maker[3];
+char gamepak_filename[512];
 
 u32 load_gamepak(char *name)
 {
   char *dot_position = strrchr(name, '.');
   s32 file_size;
-  u8 cheats_filename[256];
+  char cheats_filename[256];
 
 #ifdef WIZ_BUILD
   file_size = wiz_load_gamepak(name);
@@ -2994,7 +3005,6 @@ void init_gamepak_buffer()
 
 void init_memory()
 {
-  u32 i;
   u32 map_offset = 0;
 
   memory_regions[0x00] = (u8 *)bios_rom;
@@ -3133,7 +3143,6 @@ void load_state(char *savestate_filename)
   if(file_check_valid(savestate_file))
   {
     char current_gamepak_filename[512];
-    char savestate_gamepak_filename[512];
     u32 i;
     u32 current_color;
 

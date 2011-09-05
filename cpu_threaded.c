@@ -3177,7 +3177,7 @@ block_exit_type block_exits[MAX_EXITS];
 s32 translate_block_##type(u32 pc, translation_region_type                    \
  translation_region, u32 smc_enable)                                          \
 {                                                                             \
-  u32 opcode;                                                                 \
+  u32 opcode = 0;                                                             \
   u32 last_opcode;                                                            \
   u32 condition;                                                              \
   u32 last_condition;                                                         \
@@ -3192,9 +3192,9 @@ s32 translate_block_##type(u32 pc, translation_region_type                    \
   u32 branch_target;                                                          \
   u32 cycle_count = 0;                                                        \
   u8 *translation_target;                                                     \
-  u8 *backpatch_address;                                                      \
-  u8 *translation_ptr;                                                        \
-  u8 *translation_cache_limit;                                                \
+  u8 *backpatch_address = NULL;                                               \
+  u8 *translation_ptr = NULL;                                                 \
+  u8 *translation_cache_limit = NULL;                                         \
   s32 i;                                                                      \
   u32 flag_status;                                                            \
   block_exit_type external_block_exits[MAX_EXITS];                            \

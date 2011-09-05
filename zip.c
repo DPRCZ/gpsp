@@ -46,11 +46,11 @@ struct SZIPFileHeader
 u32 load_file_zip(char *filename)
 {
   struct SZIPFileHeader data;
-  u8 tmp[1024];
+  char tmp[1024];
   s32 retval = -1;
   u8 *buffer = NULL;
   u8 *cbuffer;
-  u8 *ext;
+  char *ext;
 
   file_open(fd, filename, read);
 

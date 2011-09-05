@@ -168,10 +168,10 @@ extern u32 memory_limits[16];
 extern u32 waitstate_cycles_sequential[16][3];
 
 extern u32 gamepak_size;
-extern u8 gamepak_title[13];
-extern u8 gamepak_code[5];
-extern u8 gamepak_maker[3];
-extern u8 gamepak_filename[512];
+extern char gamepak_title[13];
+extern char gamepak_code[5];
+extern char gamepak_maker[3];
+extern char gamepak_filename[512];
 
 cpu_alert_type dma_transfer(dma_transfer_type *dma);
 u8 *memory_region(u32 address, u32 *memory_limit);

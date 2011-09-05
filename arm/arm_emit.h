@@ -233,7 +233,6 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
 {
   u32 store_count = 0;
   u32 left_shift = 0;
-  u32 i;
 
   // Otherwise it'll return 0 things to store because it'll never
   // find anything.
@@ -276,7 +275,6 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
       {
         // Then we can throw out the last bit and tack it on
         // to the first bit.
-        u32 initial_bits = rotations[0];
         stores[0] =
          (stores[0] << ((top_bits + (32 - rotations[0])) & 0x1F)) |
          ((imm >> left_shift) & 0xFF);

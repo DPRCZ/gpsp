@@ -82,7 +82,7 @@ u32 clock_speed = 200;
 #else
 u32 clock_speed = 333;
 #endif
-u8 main_path[512];
+char main_path[512];
 
 void trigger_ext_event();
 
@@ -131,7 +131,7 @@ void trigger_ext_event();
     }                                                                         \
   }                                                                           \
 
-u8 *file_ext[] = { ".gba", ".bin", ".zip", NULL };
+static const char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
 
 #ifdef ARM_ARCH
 void ChangeWorkingDirectory(char *exe)
@@ -178,20 +178,11 @@ void init_main()
 
 int main(int argc, char *argv[])
 {
-  u32 i;
-  u32 vcount = 0;
-  u32 ticks;
-  u32 dispstat;
-  u8 load_filename[512];
-  u8 bios_filename[512];
-
 #ifdef PSP_BUILD
   sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 0,
    vblank_interrupt_handler, NULL);
   sceKernelEnableSubIntr(PSP_VBLANK_INT, 0);
 #endif
-
-  extern char *cpu_mode_names[];
 
   init_gamepak_buffer();
 
@@ -218,6 +209,7 @@ int main(int argc, char *argv[])
   init_video();
 
 #ifdef GP2X_BUILD
+  char bios_filename[512];
   sprintf(bios_filename, "%s/%s", main_path, "gba_bios.bin");
   if(load_bios(bios_filename) == -1)
 #else
@@ -292,7 +284,7 @@ int main(int argc, char *argv[])
     if(load_gamepak(argv[1]) == -1)
     {
 #ifndef PSP_BUILD
-      printf("Failed to load gamepak %s, exiting.\n", load_filename);
+      printf("Failed to load gamepak %s, exiting.\n", argv[1]);
 #endif
       exit(-1);
     }
@@ -305,6 +297,7 @@ int main(int argc, char *argv[])
   }
   else
   {
+    char load_filename[512];
     if(load_file(file_ext, load_filename) == -1)
     {
       menu(copy_screen());
@@ -392,7 +385,7 @@ void trigger_ext_event()
   static u32 event_number = 0;
   static u64 benchmark_ticks[16];
   u64 new_ticks;
-  u8 current_savestate_filename[512];
+  char current_savestate_filename[512];
 
   return;
 
@@ -874,7 +867,7 @@ void reset_gba()
 
 #ifdef PSP_BUILD
 
-u32 file_length(u8 *filename, s32 dummy)
+u32 file_length(char *filename, s32 dummy)
 {
   SceIoStat stats;
   sceIoGetstat(filename, &stats);
@@ -896,7 +889,7 @@ void get_ticks_us(u64 *tick_return)
 
 #else
 
-u32 file_length(u8 *dummy, FILE *fp)
+u32 file_length(char *dummy, FILE *fp)
 {
   u32 length;
 
@@ -940,9 +933,9 @@ void get_ticks_us(u64 *ticks_return)
 
 #endif
 
-void change_ext(u8 *src, u8 *buffer, u8 *extension)
+void change_ext(const char *src, char *buffer, const char *extension)
 {
-  u8 *dot_position;
+  char *dot_position;
   strcpy(buffer, src);
   dot_position = strrchr(buffer, '.');
 

@@ -24,7 +24,6 @@
 void trigger_key(u32 key)
 {
   u32 p1_cnt = io_registers[REG_P1CNT];
-  u32 p1;
 
   if((p1_cnt >> 14) & 0x01)
   {
@@ -474,7 +473,7 @@ u32 update_input()
 
       case BUTTON_ID_LOADSTATE:
       {
-        u8 current_savestate_filename[512];
+        char current_savestate_filename[512];
         get_savestate_filename_noshot(savestate_slot,
          current_savestate_filename);
         load_state(current_savestate_filename);
@@ -483,7 +482,7 @@ u32 update_input()
 
       case BUTTON_ID_SAVESTATE:
       {
-        u8 current_savestate_filename[512];
+        char current_savestate_filename[512];
         u16 *current_screen = copy_screen();
         get_savestate_filename_noshot(savestate_slot,
          current_savestate_filename);
@@ -670,6 +669,9 @@ gui_action_type get_gui_input()
           case SDLK_BACKSPACE:
             gui_action = CURSOR_BACK;
             break;
+
+          default:
+            break;
         }
         break;
       }
@@ -742,7 +744,7 @@ u32 update_input()
 
         if(event.key.keysym.sym == SDLK_F5)
         {
-          u8 current_savestate_filename[512];
+          char current_savestate_filename[512];
           u16 *current_screen = copy_screen();
           get_savestate_filename_noshot(savestate_slot,
            current_savestate_filename);
@@ -753,7 +755,7 @@ u32 update_input()
 
         if(event.key.keysym.sym == SDLK_F7)
         {
-          u8 current_savestate_filename[512];
+          char current_savestate_filename[512];
           get_savestate_filename_noshot(savestate_slot,
            current_savestate_filename);
           load_state(current_savestate_filename);

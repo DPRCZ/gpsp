@@ -32,7 +32,9 @@
 
 static u32 gpsp_gp2x_dev_audio;
 static u32 gpsp_gp2x_dev;
+#ifdef WIZ_BUILD
 static u32 gpsp_gp2x_gpiodev;
+#endif
 
 static u32 gp2x_audio_volume = 74/2;
 

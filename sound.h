@@ -118,7 +118,6 @@ extern u32 enable_low_pass_filter;
 extern u32 audio_buffer_size_number;
 
 extern SDL_mutex *sound_mutex;
-extern SDL_cond *sound_cv;
 
 void sound_timer_queue8(u32 channel, u8 value);
 void sound_timer_queue16(u32 channel, u16 value);
@@ -129,6 +128,8 @@ void update_gbc_sound(u32 cpu_ticks);
 void init_sound();
 void sound_write_mem_savestate(file_tag_type savestate_file);
 void sound_read_savestate(file_tag_type savestate_file);
+
+#ifdef IN_MEMORY_C
 
 #define gbc_sound_tone_control_low(channel, address)                          \
 {                                                                             \
@@ -321,6 +322,7 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
   timer[timer_number].frequency_step =                                        \
    float_to_fp16_16(16777216.0 / (timer_reload * sound_frequency))            \
 
+#endif // IN_MEMORY_C
 
 void reset_sound();
 void sound_exit();

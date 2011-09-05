@@ -887,7 +887,7 @@ u32 function_cc execute_rrx(u32 value)
 #define collapse_flags()                                                      \
   reg[REG_CPSR] = (reg[REG_N_FLAG] << 31) | (reg[REG_Z_FLAG] << 30) |         \
    (reg[REG_C_FLAG] << 29) | (reg[REG_V_FLAG] << 28) |                        \
-   reg[REG_CPSR] & 0xFF                                                       \
+   (reg[REG_CPSR] & 0xFF)                                                     \
 
 // It should be okay to still generate result flags, spsr will overwrite them.
 // This is pretty infrequent (returning from interrupt handlers, et al) so
@@ -1200,7 +1200,7 @@ typedef enum
   generate_store_reg_pc_no_flags(a0, rd);                                     \
 }                                                                             \
 
-u32 function_cc execute_mul_flags(u32 dest)
+static void function_cc execute_mul_flags(u32 dest)
 {
   calculate_z_flag(dest);
   calculate_n_flag(dest);
@@ -1228,7 +1228,7 @@ u32 function_cc execute_mul_flags(u32 dest)
   arm_multiply_flags_##flags();                                               \
 }                                                                             \
 
-u32 function_cc execute_mul_long_flags(u32 dest_lo, u32 dest_hi)
+static void function_cc execute_mul_long_flags(u32 dest_lo, u32 dest_hi)
 {
   reg[REG_Z_FLAG] = (dest_lo == 0) & (dest_hi == 0);
   calculate_n_flag(dest_hi);
@@ -2045,7 +2045,7 @@ u32 function_cc execute_ror_imm_op(u32 value, u32 shift)
 
 #define thumb_conditional_branch(condition)                                   \
 {                                                                             \
-  condition_check_type condition_check;                                       \
+  condition_check_type condition_check = CONDITION_TRUE;                      \
   generate_cycle_update();                                                    \
   generate_condition_##condition(a0, a1);                                     \
   generate_conditional_branch_type(a0, a1);                                   \
@@ -2171,7 +2171,7 @@ data_proc_generate_logic_test_function(teq, rn ^ rm);
 data_proc_generate_sub_test_function(cmp, rn, rm);
 data_proc_generate_add_test_function(cmn, rn, rm);
 
-u32 function_cc execute_swi(u32 pc)
+static void function_cc execute_swi(u32 pc)
 {
   reg_mode[MODE_SUPERVISOR][6] = pc;
   collapse_flags();
@@ -2182,7 +2182,7 @@ u32 function_cc execute_swi(u32 pc)
 
 #define arm_conditional_block_header()                                        \
 {                                                                             \
-  condition_check_type condition_check;                                       \
+  condition_check_type condition_check = CONDITION_TRUE;                      \
   generate_condition(a0, a1);                                                 \
   generate_conditional_branch_type(a0, a1);                                   \
 }

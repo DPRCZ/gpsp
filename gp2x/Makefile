@@ -29,7 +29,7 @@ CFLAGS     += -DWIZ_BUILD
 endif
 # NOTE: -funroll-loops will slow down compiling considerably
 CFLAGS     += -O3 -std=c99 -msoft-float -funsigned-char -fno-common           \
-              -fno-builtin                                                    \
+              -fno-builtin -Wall                                              \
 
 INCLUDES   = `$(PREFIX)/bin/sdl-config --cflags` -I$(PREFIX)/include
 LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
@@ -41,6 +41,10 @@ endif
 # Compilation:
 
 .SUFFIXES: .c
+
+all:    $(BIN)
+
+cpu.o cpu_threaded.z: CFLAGS += -Wno-unused-variable -Wno-unused-label
 
 %.z: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
@@ -57,7 +61,7 @@ endif
 %.o: %.s
 	$(CC) $(ASFLAGS) $(INCLUDES) -c -o $@ $<
 
-all:	$(OBJS)
+$(BIN):	$(OBJS)
 	$(CC) $(OBJS) $(LIBS) -o $(BIN)
 	$(STRIP) $(BIN)
 

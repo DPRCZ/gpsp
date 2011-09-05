@@ -28,7 +28,7 @@ typedef enum
 
 typedef struct
 {
-  u8 cheat_name[CHEAT_NAME_LENGTH];
+  char cheat_name[CHEAT_NAME_LENGTH];
   u32 cheat_active;
   u32 cheat_codes[256];
   u32 num_cheat_lines;
@@ -36,7 +36,7 @@ typedef struct
 } cheat_type;
 
 void process_cheats();
-void add_cheats(u8 *cheats_filename);
+void add_cheats(char *cheats_filename);
 
 #define MAX_CHEATS 16
 

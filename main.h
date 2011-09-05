@@ -71,9 +71,6 @@ extern u32 global_cycles_per_instruction;
 extern u32 synchronize_flag;
 extern u32 skip_next_frame;
 
-extern timer_type timer[4];
-static u32 prescale_table[] = { 0, 6, 8, 10 };
-
 extern u32 cycle_memory_access;
 extern u32 cycle_pc_relative_access;
 extern u32 cycle_sp_relative_access;
@@ -86,7 +83,7 @@ extern u32 flush_ram_count;
 
 extern u64 base_timestamp;
 
-extern u8 main_path[512];
+extern char main_path[512];
 
 extern u32 update_backup_flag;
 extern u32 clock_speed;
@@ -97,18 +94,18 @@ void synchronize();
 void quit();
 void delay_us(u32 us_count);
 void get_ticks_us(u64 *tick_return);
-void game_name_ext(u8 *src, u8 *buffer, u8 *extension);
+void game_name_ext(char *src, char *buffer, char *extension);
 void main_write_mem_savestate(file_tag_type savestate_file);
 void main_read_savestate(file_tag_type savestate_file);
 
 
 #ifdef PSP_BUILD
 
-u32 file_length(u8 *filename, s32 dummy);
+u32 file_length(char *filename, s32 dummy);
 
 #else
 
-u32 file_length(u8 *dummy, FILE *fp);
+u32 file_length(char *dummy, FILE *fp);
 
 #endif
 
@@ -116,6 +113,11 @@ extern u32 real_frame_count;
 extern u32 virtual_frame_count;
 extern u32 max_frameskip;
 extern u32 num_skipped_frames;
+
+#ifdef IN_MEMORY_C
+
+extern timer_type timer[4];
+static u32 prescale_table[] = { 0, 6, 8, 10 };
 
 #define count_timer(timer_number)                                             \
   timer[timer_number].reload = 0x10000 - value;                               \
@@ -181,7 +183,9 @@ extern u32 num_skipped_frames;
   }                                                                           \
   address16(io_registers, 0x102 + (timer_number * 4)) = value;                \
 
-void change_ext(u8 *src, u8 *buffer, u8 *extension);
+#endif // IN_MEMORY_C
+
+void change_ext(const char *src, char *buffer, const char *extension);
 
 void set_clock_speed();
 

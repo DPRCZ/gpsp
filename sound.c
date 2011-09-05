@@ -27,9 +27,8 @@ gbc_sound_struct gbc_sound_channel[4];
 
 u32 sound_frequency = 44100;
 
-SDL_AudioSpec sound_settings;
 SDL_mutex *sound_mutex;
-SDL_cond *sound_cv;
+static SDL_cond *sound_cv;
 
 #ifdef PSP_BUILD
 u32 audio_buffer_size_number = 1;
@@ -37,15 +36,15 @@ u32 audio_buffer_size_number = 1;
 u32 audio_buffer_size_number = 8;
 #endif
 
-u32 audio_buffer_size;
-u32 sound_on = 0;
-s16 sound_buffer[BUFFER_SIZE];
-u32 sound_buffer_base = 0;
+u32 sound_on;
+static u32 audio_buffer_size;
+static s16 sound_buffer[BUFFER_SIZE];
+static u32 sound_buffer_base;
 
-u32 sound_last_cpu_ticks = 0;
-fixed16_16 gbc_sound_tick_step;
+static u32 sound_last_cpu_ticks;
+static fixed16_16 gbc_sound_tick_step;
 
-u32 sound_exit_flag;
+static u32 sound_exit_flag;
 
 // Queue 1, 2, or 4 samples to the top of the DS FIFO, wrap around circularly
 
@@ -751,6 +750,8 @@ void sound_exit()
 
 void init_sound()
 {
+  SDL_AudioSpec sound_settings;
+
 #ifdef PSP_BUILD
   audio_buffer_size = (audio_buffer_size_number * 1024) + 3072;
 #else

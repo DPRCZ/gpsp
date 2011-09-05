@@ -23,6 +23,8 @@
 #define FONT_WIDTH  6
 #define FONT_HEIGHT 10
 
+#ifdef WANT_FONT_BITS
+
 /* Font information:
    name: 6x10
    facename: -Misc-Fixed-Medium-R-Normal--10-100-75-75-C-60-ISO8859-1
@@ -5876,3 +5878,5 @@ static unsigned long _font_offset[256] =
   2210, /* (0xfe) */
   2220  /* (0xff) */
 };
+
+#endif /* WANT_FONT_BITS */

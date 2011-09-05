@@ -362,7 +362,7 @@ void print_register_usage()
 
 
 #define calculate_reg_sh()                                                    \
-  u32 reg_sh;                                                                 \
+  u32 reg_sh = 0;                                                             \
   switch((opcode >> 4) & 0x07)                                                \
   {                                                                           \
     /* LSL imm */                                                             \
@@ -451,7 +451,7 @@ void print_register_usage()
   }                                                                           \
 
 #define calculate_reg_sh_flags()                                              \
-  u32 reg_sh;                                                                 \
+  u32 reg_sh = 0;                                                             \
   switch((opcode >> 4) & 0x07)                                                \
   {                                                                           \
     /* LSL imm */                                                             \
@@ -604,7 +604,7 @@ void print_register_usage()
   }                                                                           \
 
 #define calculate_reg_offset()                                                \
-  u32 reg_offset;                                                             \
+  u32 reg_offset = 0;                                                         \
   switch((opcode >> 5) & 0x03)                                                \
   {                                                                           \
     /* LSL imm */                                                             \
@@ -960,7 +960,7 @@ const u32 psr_masks[16] =
   else                                                                        \
                                                                               \
   if(((_address & aligned_address_mask##size) == 0) &&                        \
-   (map = memory_map_read[address >> 15]))                                    \
+   (map = memory_map_read[_address >> 15]))                                   \
   {                                                                           \
     dest = *((type *)((u8 *)map + (_address & 0x7FFF)));                      \
   }                                                                           \
@@ -1016,37 +1016,39 @@ const u32 psr_masks[16] =
 
 #define load_aligned32(address, dest)                                         \
 {                                                                             \
-  u8 *map = memory_map_read[address >> 15];                                   \
-  if(address < 0x10000000)                                                    \
+  u32 _address = address;                                                     \
+  u8 *map = memory_map_read[_address >> 15];                                  \
+  if(_address < 0x10000000)                                                   \
   {                                                                           \
-    memory_region_access_read_u32[address >> 24]++;                           \
+    memory_region_access_read_u32[_address >> 24]++;                          \
     memory_reads_u32++;                                                       \
   }                                                                           \
   if(map)                                                                     \
   {                                                                           \
-    dest = address32(map, address & 0x7FFF);                                  \
+    dest = address32(map, _address & 0x7FFF);                                 \
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    dest = read_memory32(address);                                            \
+    dest = read_memory32(_address);                                           \
   }                                                                           \
 }                                                                             \
 
 #define store_aligned32(address, value)                                       \
 {                                                                             \
-  u8 *map = memory_map_write[address >> 15];                                  \
-  if(address < 0x10000000)                                                    \
+  u32 _address = address;                                                     \
+  u8 *map = memory_map_write[_address >> 15];                                 \
+  if(_address < 0x10000000)                                                   \
   {                                                                           \
-    memory_region_access_write_u32[address >> 24]++;                          \
+    memory_region_access_write_u32[_address >> 24]++;                         \
     memory_writes_u32++;                                                      \
   }                                                                           \
   if(map)                                                                     \
   {                                                                           \
-    address32(map, address & 0x7FFF) = value;                                 \
+    address32(map, _address & 0x7FFF) = value;                                \
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    cpu_alert = write_memory32(address, value);                               \
+    cpu_alert = write_memory32(_address, value);                              \
     if(cpu_alert)                                                             \
       goto alert;                                                             \
   }                                                                           \
@@ -1233,7 +1235,7 @@ const u32 psr_masks[16] =
   const u32 _sa = src_a;                                                      \
   const u32 _sb = src_b;                                                      \
   u32 dest = _sa + _sb;                                                       \
-  calculate_flags_add(dest, src_a, src_b);                                    \
+  calculate_flags_add(dest, _sa, _sb);                                        \
   reg[dest_reg] = dest;                                                       \
   thumb_pc_offset(2);                                                         \
 }                                                                             \
@@ -1241,7 +1243,7 @@ const u32 psr_masks[16] =
 #define thumb_add_noflags(type, dest_reg, src_a, src_b)                       \
 {                                                                             \
   thumb_decode_##type();                                                      \
-  u32 dest = src_a + src_b;                                                   \
+  u32 dest = (src_a) + (src_b);                                               \
   reg[dest_reg] = dest;                                                       \
   thumb_pc_offset(2);                                                         \
 }                                                                             \
@@ -1252,7 +1254,7 @@ const u32 psr_masks[16] =
   const u32 _sa = src_a;                                                      \
   const u32 _sb = src_b;                                                      \
   u32 dest = _sa - _sb;                                                       \
-  calculate_flags_sub(dest, src_a, src_b);                                    \
+  calculate_flags_sub(dest, _sa, _sb);                                        \
   reg[dest_reg] = dest;                                                       \
   thumb_pc_offset(2);                                                         \
 }                                                                             \
@@ -4058,19 +4060,19 @@ u32 last_instruction = 0;
 
 u32 in_interrupt = 0;
 
-u32 debug_on()
+void debug_on()
 {
   current_debug_state = STEP;
   debug_screen_start();
 }
 
-u32 debug_off(debug_state new_debug_state)
+void debug_off(debug_state new_debug_state)
 {
   current_debug_state = new_debug_state;
   debug_screen_end();
 }
 
-u32 function_cc step_debug(u32 pc, u32 cycles)
+void function_cc step_debug(u32 pc, u32 cycles)
 {
   u32 thumb = 0;
 
@@ -4134,6 +4136,9 @@ u32 function_cc step_debug(u32 pc, u32 cycles)
 
       break;
     }
+
+    default:
+      break;
   }
 
   if((current_debug_state == STEP) ||
@@ -4263,7 +4268,7 @@ u32 function_cc step_debug(u32 pc, u32 cycles)
 
       case 'a':
       {
-        u8 current_savestate_filename[512];
+        char current_savestate_filename[512];
         u16 *current_screen = copy_screen();
         get_savestate_filename_noshot(savestate_slot,
          current_savestate_filename);
@@ -4286,8 +4291,6 @@ u32 function_cc step_debug(u32 pc, u32 cycles)
     reg[REG_PC] = pc + 2;
   else
     reg[REG_PC] = pc + 4;
-
-  return 0;
 }
 
 void set_cpu_mode(cpu_mode_type new_mode)
@@ -4352,7 +4355,7 @@ void raise_interrupt(irq_type irq_raised)
   }
 }
 
-u32 execute_arm(u32 cycles)
+void execute_arm(u32 cycles)
 {
   u32 pc = reg[REG_PC];
   u32 opcode;

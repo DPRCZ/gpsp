@@ -69,7 +69,7 @@
 #define COLOR_HELP_TEXT     color16(16, 40, 24)
 
 #ifdef PSP_BUILD
-  u8 *clock_speed_options[] =
+  static const char *clock_speed_options[] =
   {
     "33MHz", "66MHz", "100MHz", "133MHz", "166MHz", "200MHz", "233MHz",
     "266MHz", "300MHz", "333MHz"
@@ -79,7 +79,7 @@
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed / 33) - 1
 #elif defined(WIZ_BUILD)
-  u8 *clock_speed_options[] =
+  static const char *clock_speed_options[] =
   {
     "300MHz", "333MHz", "366MHz", "400MHz", "433MHz",
     "466MHz", "500MHz", "533MHz", "566MHz", "600MHz",
@@ -91,7 +91,7 @@
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed - 300) / 33
 #elif defined(GP2X_BUILD)
-  u8 *clock_speed_options[] =
+  static const char *clock_speed_options[] =
   {
     "150MHz", "160MHz", "170MHz", "180MHz", "190MHz",
     "200MHz", "210MHz", "220MHz", "230MHz", "240MHz",
@@ -102,12 +102,12 @@
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed - 150) / 10
 #else
-  u8 *clock_speed_options[] =
+  static const char *clock_speed_options[] =
   {
     "0"
   };
-  #define menu_get_clock_speed() 0
-  #define get_clock_speed_number() 0
+  #define menu_get_clock_speed()
+  #define get_clock_speed_number()
 #endif
 
 
@@ -125,25 +125,24 @@ int sort_function(const void *dest_str_ptr, const void *src_str_ptr)
   return strcasecmp(dest_str, src_str);
 }
 
-s32 load_file(u8 **wildcards, u8 *result)
+s32 load_file(const char **wildcards, char *result)
 {
   DIR *current_dir;
   struct dirent *current_file;
   struct stat file_info;
-  u8 current_dir_name[MAX_PATH];
-  u8 current_dir_short[81];
+  char current_dir_name[MAX_PATH];
+  char current_dir_short[81];
   u32 current_dir_length;
   u32 total_filenames_allocated;
   u32 total_dirnames_allocated;
-  u8 **file_list;
-  u8 **dir_list;
+  char **file_list;
+  char **dir_list;
   u32 num_files;
   u32 num_dirs;
-  u8 *file_name;
+  char *file_name;
   u32 file_name_length;
   u32 ext_pos = -1;
   u32 chosen_file, chosen_dir;
-  u32 dialog_result = 1;
   s32 return_value = 1;
   s32 current_file_selection;
   s32 current_file_scroll_value;
@@ -168,10 +167,10 @@ s32 load_file(u8 **wildcards, u8 *result)
 
     total_filenames_allocated = 32;
     total_dirnames_allocated = 32;
-    file_list = (u8 **)malloc(sizeof(u8 *) * 32);
-    dir_list = (u8 **)malloc(sizeof(u8 *) * 32);
-    memset(file_list, 0, sizeof(u8 *) * 32);
-    memset(dir_list, 0, sizeof(u8 *) * 32);
+    file_list = (char **)malloc(sizeof(char *) * 32);
+    dir_list = (char **)malloc(sizeof(char *) * 32);
+    memset(file_list, 0, sizeof(char *) * 32);
+    memset(dir_list, 0, sizeof(char *) * 32);
 
     num_files = 0;
     num_dirs = 0;
@@ -199,8 +198,7 @@ s32 load_file(u8 **wildcards, u8 *result)
         {
           if(S_ISDIR(file_info.st_mode))
           {
-            dir_list[num_dirs] =
-             (u8 *)malloc(file_name_length + 1);
+            dir_list[num_dirs] = malloc(file_name_length + 1);
 
             sprintf(dir_list[num_dirs], "%s", file_name);
 
@@ -227,7 +225,7 @@ s32 load_file(u8 **wildcards, u8 *result)
                  wildcards[i]))
                 {
                   file_list[num_files] =
-                   (u8 *)malloc(file_name_length + 1);
+                   malloc(file_name_length + 1);
 
                   sprintf(file_list[num_files], "%s", file_name);
 
@@ -241,26 +239,26 @@ s32 load_file(u8 **wildcards, u8 *result)
 
         if(num_files == total_filenames_allocated)
         {
-          file_list = (u8 **)realloc(file_list, sizeof(u8 *) *
+          file_list = (char **)realloc(file_list, sizeof(char *) *
            total_filenames_allocated * 2);
           memset(file_list + total_filenames_allocated, 0,
-           sizeof(u8 *) * total_filenames_allocated);
+           sizeof(char *) * total_filenames_allocated);
           total_filenames_allocated *= 2;
         }
 
         if(num_dirs == total_dirnames_allocated)
         {
-          dir_list = (u8 **)realloc(dir_list, sizeof(u8 *) *
+          dir_list = (char **)realloc(dir_list, sizeof(char *) *
            total_dirnames_allocated * 2);
           memset(dir_list + total_dirnames_allocated, 0,
-           sizeof(u8 *) * total_dirnames_allocated);
+           sizeof(char *) * total_dirnames_allocated);
           total_dirnames_allocated *= 2;
         }
       }
     } while(current_file);
 
-    qsort((void *)file_list, num_files, sizeof(u8 *), sort_function);
-    qsort((void *)dir_list, num_dirs, sizeof(u8 *), sort_function);
+    qsort((void *)file_list, num_files, sizeof(char *), sort_function);
+    qsort((void *)dir_list, num_dirs, sizeof(char *), sort_function);
 
     closedir(current_dir);
 
@@ -296,8 +294,6 @@ s32 load_file(u8 **wildcards, u8 *result)
 
     clear_screen(COLOR_BG);
   {
-    u8 print_buffer[81];
-
     while(repeat)
     {
       flip_screen();
@@ -526,6 +522,9 @@ s32 load_file(u8 **wildcards, u8 *result)
           return_value = -1;
           repeat = 0;
           break;
+
+        default:
+          break;
       }
     }
   }
@@ -747,7 +746,7 @@ u32 gamepad_config_line_to_button[] =
 
 #endif
 
-u8 *scale_options[] =
+static const char *scale_options[] =
 {
 #ifdef PSP_BUILD
   "unscaled 3:2", "scaled 3:2", "fullscreen 16:9"
@@ -765,7 +764,7 @@ u8 *scale_options[] =
 
 s32 load_game_config_file()
 {
-  u8 game_config_filename[512];
+  char game_config_filename[512];
   u32 file_loaded = 0;
   u32 i;
   change_ext(gamepak_filename, game_config_filename, ".cfg");
@@ -840,7 +839,7 @@ s32 load_game_config_file()
 
 s32 load_config_file()
 {
-  u8 config_path[512];
+  char config_path[512];
 
   #if defined(_WIN32) || defined(_WIN32_WCE)
     sprintf(config_path, "%s\\%s", main_path, GPSP_CONFIG_FILENAME);
@@ -858,8 +857,6 @@ s32 load_config_file()
     if(file_size == 92)
     {
       u32 file_options[file_size / 4];
-      u32 i;
-      s32 menu_button = -1;
       file_read_array(config_file, file_options);
 
       screen_scale = file_options[0] %
@@ -885,6 +882,8 @@ s32 load_config_file()
       // key, if not assign to triangle
 
 #ifndef PC_BUILD
+      u32 i;
+      s32 menu_button = -1;
       for(i = 0; i < 16; i++)
       {
         gamepad_config_map[i] = file_options[7 + i] %
@@ -913,7 +912,7 @@ s32 load_config_file()
 
 s32 save_game_config_file()
 {
-  u8 game_config_filename[512];
+  char game_config_filename[512];
   u32 i;
 
   change_ext(gamepak_filename, game_config_filename, ".cfg");
@@ -946,7 +945,7 @@ s32 save_game_config_file()
 
 s32 save_config_file()
 {
-  u8 config_path[512];
+  char config_path[512];
 
   #if (defined(PSP_BUILD) || defined(ARM_ARCH)) && !defined(_WIN32_WCE)
     sprintf(config_path, "%s/%s", main_path, GPSP_CONFIG_FILENAME);
@@ -961,7 +960,6 @@ s32 save_config_file()
   if(file_check_valid(config_file))
   {
     u32 file_options[23];
-    u32 i;
 
     file_options[0] = screen_scale;
     file_options[1] = screen_filter;
@@ -972,6 +970,7 @@ s32 save_config_file()
     file_options[6] = analog_sensitivity_level;
 
 #ifndef PC_BUILD
+    u32 i;
     for(i = 0; i < 16; i++)
     {
       file_options[7 + i] = gamepad_config_map[i];
@@ -999,16 +998,16 @@ typedef enum
 
 u32 savestate_slot = 0;
 
-void get_savestate_snapshot(u8 *savestate_filename)
+void get_savestate_snapshot(char *savestate_filename)
 {
   u16 snapshot_buffer[240 * 160];
-  u8 savestate_timestamp_string[80];
+  char savestate_timestamp_string[80];
 
   file_open(savestate_file, savestate_filename, read);
 
   if(file_check_valid(savestate_file))
   {
-    u8 weekday_strings[7][11] =
+    const char weekday_strings[7][11] =
     {
       "Sunday", "Monday", "Tuesday", "Wednesday",
       "Thursday", "Friday", "Saturday"
@@ -1045,9 +1044,9 @@ void get_savestate_snapshot(u8 *savestate_filename)
 #endif
 }
 
-void get_savestate_filename(u32 slot, u8 *name_buffer)
+void get_savestate_filename(u32 slot, char *name_buffer)
 {
-  u8 savestate_ext[16];
+  char savestate_ext[16];
 
   sprintf(savestate_ext, "%d.svs", slot);
   change_ext(gamepak_filename, name_buffer, savestate_ext);
@@ -1055,9 +1054,9 @@ void get_savestate_filename(u32 slot, u8 *name_buffer)
   get_savestate_snapshot(name_buffer);
 }
 
-void get_savestate_filename_noshot(u32 slot, u8 *name_buffer)
+void get_savestate_filename_noshot(u32 slot, char *name_buffer)
 {
-  u8 savestate_ext[16];
+  char savestate_ext[16];
 
   sprintf(savestate_ext, "%d.svs", slot);
   change_ext(gamepak_filename, name_buffer, savestate_ext);
@@ -1072,19 +1071,16 @@ void get_savestate_filename_noshot(u32 slot, u8 *name_buffer)
 
 u32 menu(u16 *original_screen)
 {
-  u8 print_buffer[81];
+  char print_buffer[81];
   u32 clock_speed_number;
-  u32 _current_option = 0;
   gui_action_type gui_action;
-  menu_enum _current_menu = MAIN_MENU;
   u32 i;
   u32 repeat = 1;
   u32 return_value = 0;
   u32 first_load = 0;
-  u8 savestate_ext[16];
-  u8 current_savestate_filename[512];
-  u8 line_buffer[80];
-  u8 cheat_format_str[10][41];
+  char current_savestate_filename[512];
+  char line_buffer[80];
+  char cheat_format_str[10][41];
 
   menu_type *current_menu;
   menu_option_type *current_option;
@@ -1094,7 +1090,8 @@ u32 menu(u16 *original_screen)
   auto void choose_menu();
   auto void clear_help();
 
-  static const u8 * const gamepad_help[] =
+#ifndef PC_BUILD
+  static const char * const gamepad_help[] =
   {
     "Up button on GBA d-pad.",
     "Down button on GBA d-pad.",
@@ -1119,6 +1116,33 @@ u32 menu(u16 *original_screen)
     "Displays virtual/drawn frames per second.",
     "Does nothing."
   };
+
+  static const char *gamepad_config_buttons[] =
+  {
+    "UP",
+    "DOWN",
+    "LEFT",
+    "RIGHT",
+    "A",
+    "B",
+    "L",
+    "R",
+    "START",
+    "SELECT",
+    "MENU",
+    "FASTFORWARD",
+    "LOAD STATE",
+    "SAVE STATE",
+    "RAPIDFIRE A",
+    "RAPIDFIRE B",
+    "RAPIDFIRE L",
+    "RAPIDFIRE R",
+    "VOLUME UP",
+    "VOLUME DOWN",
+    "DISPLAY FPS",
+    "NOTHING"
+  };
+#endif
 
   void menu_update_clock()
   {
@@ -1146,8 +1170,8 @@ u32 menu(u16 *original_screen)
 
   void menu_load()
   {
-    u8 *file_ext[] = { ".gba", ".bin", ".zip", NULL };
-    u8 load_filename[512];
+    const char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
+    char load_filename[512];
     save_game_config_file();
     if(load_file(file_ext, load_filename) != -1)
     {
@@ -1206,8 +1230,8 @@ u32 menu(u16 *original_screen)
 
   void menu_load_state_file()
   {
-    u8 *file_ext[] = { ".svs", NULL };
-    u8 load_filename[512];
+    const char *file_ext[] = { ".svs", NULL };
+    char load_filename[512];
     if(load_file(file_ext, load_filename) != -1)
     {
       load_state(load_filename);
@@ -1268,55 +1292,28 @@ u32 menu(u16 *original_screen)
      current_savestate_filename);
   }
 
-  u8 *yes_no_options[] = { "no", "yes" };
-  u8 *enable_disable_options[] = { "disabled", "enabled" };
+  const char *yes_no_options[] = { "no", "yes" };
+  const char *enable_disable_options[] = { "disabled", "enabled" };
 
-  u8 *frameskip_options[] = { "automatic", "manual", "off" };
-  u8 *frameskip_variation_options[] = { "uniform", "random" };
+  const char *frameskip_options[] = { "automatic", "manual", "off" };
+  const char *frameskip_variation_options[] = { "uniform", "random" };
 
 #ifndef PSP_BUILD
-  u8 *audio_buffer_options[] =
+  static const char *audio_buffer_options[] =
   {
     "16 bytes", "32 bytes", "64 bytes",
     "128 bytes", "256 bytes", "512 bytes", "1024 bytes", "2048 bytes",
     "4096 bytes", "8192 bytes", "16284 bytes"
   };
 #else
-  u8 *audio_buffer_options[] =
+  const char *audio_buffer_options[] =
   {
     "3072 bytes", "4096 bytes", "5120 bytes", "6144 bytes", "7168 bytes",
     "8192 bytes", "9216 bytes", "10240 bytes", "11264 bytes", "12288 bytes"
   };
-
 #endif
 
-  u8 *update_backup_options[] = { "Exit only", "Automatic" };
-
-  u8 *gamepad_config_buttons[] =
-  {
-    "UP",
-    "DOWN",
-    "LEFT",
-    "RIGHT",
-    "A",
-    "B",
-    "L",
-    "R",
-    "START",
-    "SELECT",
-    "MENU",
-    "FASTFORWARD",
-    "LOAD STATE",
-    "SAVE STATE",
-    "RAPIDFIRE A",
-    "RAPIDFIRE B",
-    "RAPIDFIRE L",
-    "RAPIDFIRE R",
-    "VOLUME UP",
-    "VOLUME DOWN",
-    "DISPLAY FPS",
-    "NOTHING"
-  };
+  static const char *update_backup_options[] = { "Exit only", "Automatic" };
 
   // Marker for help information, don't go past this mark (except \n)------*
   menu_option_type graphics_sound_options[] =
@@ -1771,6 +1768,9 @@ u32 menu(u16 *original_screen)
 
         if(current_option->option_type & SUBMENU_OPTION)
           choose_menu(current_option->sub_menu);
+        break;
+
+      default:
         break;
     }
   }

@@ -24,7 +24,7 @@ expand_blend:
   add r1, r1, r2, lsl #1          @ screen_dest_ptr += start
   sub r2, r3, r2                  @ r2 = end - start
   ldr r3, 6b                      @ r3 = io_registers
-  ldr r3, [r3, #0x52]             @ r3 = bldalpha
+  ldrh r3, [r3, #0x52]            @ r3 = bldalpha
   mov r4, r3, lsr #8              @ r4 = bldalpha >> 8
   and r3, r3, #0x1F               @ r3 = blend_a
   and r4, r4, #0x1F               @ r4 = blend_b

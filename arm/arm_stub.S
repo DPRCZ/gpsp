@@ -360,13 +360,10 @@ execute_store_cpsr:
 @ r1: bitmask of which bits in spsr to update
 
 execute_store_spsr:
-  ldr r1, 1f                              @ r1 = spsr
+  ldr r1, =spsr                           @ r1 = spsr
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = CPU_MODE
   str r0, [r1, r2, lsl #2]                @ spsr[CPU_MODE] = new_spsr
   bx lr
-
-1:
-  .word spsr
 
 @ Read the current spsr.
 
@@ -374,7 +371,7 @@ execute_store_spsr:
 @ r0: spsr
 
 execute_read_spsr:
-  ldr r0, 1b                              @ r0 = spsr
+  ldr r0, =spsr                           @ r0 = spsr
   ldr r1, [reg_base, #CPU_MODE]           @ r1 = CPU_MODE
   ldr r0, [r0, r1, lsl #2]                @ r0 = spsr[CPU_MODE]
   bx lr                                   @ return
@@ -387,7 +384,7 @@ execute_read_spsr:
 
 execute_spsr_restore:
   save_flags()
-  ldr r1, 1f                              @ r1 = spsr
+  ldr r1, =spsr                           @ r1 = spsr
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = cpu_mode
   ldr r1, [r1, r2, lsl #2]                @ r1 = spsr[cpu_mode] (new cpsr)
   str r1, [reg_base, #REG_CPSR]           @ update cpsr
@@ -406,10 +403,6 @@ execute_spsr_restore:
   restore_flags()
   bx r0
 
-  @ This will service execute_spsr_restore and execute_swi
-1:
-  .word spsr
-
 2:
   load_registers_thumb()                  @ load Thumb registers
   call_c_function(block_lookup_address_thumb)
@@ -427,12 +420,12 @@ execute_spsr_restore:
                                                                              ;\
 execute_swi_##mode:                                                          ;\
   save_flags()                                                               ;\
-  ldr r1, 1f                              /* r1 = reg_mode                 */;\
+  ldr r1, =reg_mode                       /* r1 = reg_mode                 */;\
   /* reg_mode[MODE_SUPERVISOR][6] = pc                                     */;\
   ldr r0, [lr]                            /* load PC                       */;\
   str r0, [r1, #((MODE_SUPERVISOR * (7 * 4)) + (6 * 4))]                     ;\
   collapse_flags_no_update(r0)            /* r0 = cpsr                     */;\
-  ldr r1, 2f                              /* r1 = spsr                     */;\
+  ldr r1, =spsr                           /* r1 = spsr                     */;\
   str r0, [r1, #(MODE_SUPERVISOR * 4)]    /* spsr[MODE_SUPERVISOR] = cpsr  */;\
   bic r0, r0, #0x3F                       /* clear mode flag in r0         */;\
   orr r0, r0, #0x13                       /* set to supervisor mode        */;\
@@ -448,15 +441,6 @@ execute_swi_##mode:                                                          ;\
                                                                              ;\
   restore_flags()                                                            ;\
   add pc, lr, #4                          /* return                        */;\
-                                                                             ;\
-1:                                                                           ;\
-  .word reg_mode                                                             ;\
-                                                                             ;\
-2:                                                                           ;\
-  .word spsr                                                                 ;\
-                                                                             ;\
-3:                                                                           ;\
-  .word execute_bios_rom_ptr                                                 ;\
 
 execute_swi_builder(arm)
 execute_swi_builder(thumb)
@@ -531,7 +515,7 @@ execute_arm_translate:
   tst r0, #0xF0000000                     /* make sure address is in range */;\
   bne ext_store_u##store_type             /* if not do ext store           */;\
                                                                              ;\
-  ldr r2, 1f                              /* r2 = memory_map_write         */;\
+  ldr r2, =memory_map_write               /* r2 = memory_map_write         */;\
   mov lr, r0, lsr #15                     /* lr = page index of address    */;\
   ldr r2, [r2, lr, lsl #2]                /* r2 = memory page              */;\
                                                                              ;\
@@ -572,8 +556,6 @@ execute_store_u##store_type:                                                 ;\
   ldr r0, [lr]                            /* load PC                       */;\
   str r0, [reg_base, #REG_PC]             /* write out PC                  */;\
   b smc_write                             /* perform smc write             */;\
-1:                                                                           ;\
-  .word memory_map_write                                                     ;\
                                                                              ;\
 ext_store_u##store_type:                                                     ;\
   ldmia sp!, { lr }                       /* pop lr off of stack           */;\
@@ -592,9 +574,6 @@ execute_store_u32_safe:
   execute_store_body(32_safe, str)
   restore_flags()
   ldmia sp!, { pc }                       @ return
-
-1:
-  .word memory_map_write
 
 ext_store_u32_safe:
   ldmia sp!, { lr }                       @ Restore lr
@@ -708,7 +687,7 @@ execute_load_##load_type:                                                    ;\
   tst r0, mask                            /* make sure address is in range */;\
   bne ext_load_##load_type                /* if not do ext load            */;\
                                                                              ;\
-  ldr r2, 1f                              /* r2 = memory_map_read          */;\
+  ldr r2, =memory_map_read                /* r2 = memory_map_read          */;\
   mov r1, r0, lsr #15                     /* r1 = page index of address    */;\
   ldr r2, [r2, r1, lsl #2]                /* r2 = memory page              */;\
                                                                              ;\
@@ -726,9 +705,6 @@ ext_load_##load_type:                                                        ;\
   sign_extend_##load_type(r0)             /* sign extend result            */;\
   restore_flags()                                                            ;\
   add pc, lr, #4                          /* return                        */;\
-                                                                             ;\
-1:                                                                           ;\
-  .word memory_map_read                                                      ;\
 
 
 execute_load_builder(u8, 8, ldrneb, #0xF0000000)
@@ -741,36 +717,27 @@ execute_load_builder(u32, 32, ldrne, #0xF0000000)
 #define execute_ptr_builder(region, ptr, bits)                               ;\
                                                                              ;\
 execute_##region##_ptr:                                                      ;\
-  ldr r1, 1f                              /* load region ptr               */;\
+  ldr r1, =(ptr)                          /* load region ptr               */;\
   mov r0, r0, lsl #(32 - bits)            /* isolate bottom bits           */;\
   mov r0, r0, lsr #(32 - bits)                                               ;\
   bx lr                                   /* return                        */;\
-                                                                             ;\
-1:                                                                           ;\
-  .word (ptr)                                                                ;\
 
 
 execute_bios_ptr_protected:
-  ldr r1, 1f                              @ load bios read ptr
+  ldr r1, =bios_read_protect              @ load bios read ptr
   and r0, r0, #0x03                       @ only want bottom 2 bits
   bx lr                                   @ return
-
-1:
-  .word bios_read_protect
 
 
 @ address = (address & 0x7FFF) + ((address & 0x38000) * 2) + 0x8000;
 
 execute_ewram_ptr:
-  ldr r1, 1f                              @ load ewram read ptr
+  ldr r1, =(ewram + 0x8000)               @ load ewram read ptr
   mov r2, r0, lsl #17                     @ isolate bottom 15 bits
   mov r2, r2, lsr #17
   and r0, r0, #0x38000                    @ isolate top 2 bits
   add r0, r2, r0, lsl #1                  @ add top 2 bits * 2 to bottom 15
   bx lr                                   @ return
-
-1:
-  .word (ewram + 0x8000)
 
 
 @  u32 gamepak_index = address >> 15;
@@ -782,7 +749,7 @@ execute_ewram_ptr:
 @  value = address##type(map, address & 0x7FFF)
 
 execute_gamepak_ptr:
-  ldr r1, 1f                              @ load memory_map_read
+  ldr r1, =memory_map_read                @ load memory_map_read
   mov r2, r0, lsr #15                     @ isolate top 17 bits
   ldr r1, [r1, r2, lsl #2]                @ load memory map read ptr
 
@@ -803,9 +770,6 @@ execute_gamepak_ptr:
   mov r0, r0, lsr #17
   restore_flags()
   bx lr                                   @ return
-
-1:
-  .word memory_map_read
 
 
 @ These will store the result in a pointer, then pass that pointer.
@@ -913,7 +877,7 @@ ptr_read_function_table:
 
 load_ptr_read_function_table:
   mov r0, #256                            @ 256 elements
-  ldr r1, 1f                              @ r0 = ptr_read_function_table
+  ldr r1, =ptr_read_function_table        @ r0 = ptr_read_function_table
   mov r2, sp                              @ load here
 
 2:
@@ -925,40 +889,25 @@ load_ptr_read_function_table:
 
   bx lr
 
-1:
-  .word ptr_read_function_table
-
 
 @ Patch the read function table to allow for BIOS reads.
 
 execute_patch_bios_read:
-  ldr r0, 1f                              @ r0 = patch function
-  ldr r1, 2f                              @ r1 = reg
+  ldr r1, =reg                            @ r1 = reg
+  ldr r0, =execute_bios_rom_ptr           @ r0 = patch function
   ldr r1, [r1]
   str r0, [r1, #-REG_BASE_OFFSET]
   bx lr
-
-1:
-  .word execute_bios_rom_ptr
-
-2:
-  .word reg
 
 
 @ Patch the read function table to allow for BIOS reads.
 
 execute_patch_bios_protect:
-  ldr r0, 1f                              @ r0 = patch function
-  ldr r1, 2f                              @ r1 = reg
+  ldr r1, =reg                            @ r1 = reg
+  ldr r0, =execute_bios_ptr_protected     @ r0 = patch function
   ldr r1, [r1]
   str r0, [r1, #-REG_BASE_OFFSET]
   bx lr
-
-1:
-  .word execute_bios_ptr_protected
-
-2:
-  .word reg
 
 
 #define save_reg_scratch(reg)                                                 ;\
@@ -1014,9 +963,8 @@ step_debug_arm:
   restore_flags()
   add pc, lr, #4                          @ return, skipping PC
 
+.pool
 
 .comm memory_map_read 0x8000
 .comm memory_map_write 0x8000
-
-
 

@@ -16,7 +16,6 @@ BIN       = gpsp
 VPATH      += .. ../arm
 CFLAGS     += -DARM_ARCH -DPND_BUILD -Wall
 CFLAGS     += -mcpu=cortex-a8 -mtune=cortex-a8 -mfloat-abi=softfp -ffast-math
-CFLAGS     += -fno-common
 CFLAGS     += -ggdb
 CFLAGS     += -O2
 

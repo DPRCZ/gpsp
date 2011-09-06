@@ -22,17 +22,14 @@
 
 #define BUFFER_SIZE 65536
 
-// A lot of sound cards on PC can't handle such small buffers but this
-// seems to work well on PSP.
+#define GBA_XTAL      16777216.0f
+#define GBA_60HZ_RATE 16853760.0f /* 228*(272+960)*60 */
 
-#ifdef PSP_BUILD
-
-#define SOUND_BUFFER_SIZE 4096
-
+#if !defined(PSP_BUILD) && !defined(WIZ_BUILD)
+  // run GBA at 60Hz (~0.5% faster) to better match host display
+  #define GBC_BASE_RATE GBA_60HZ_RATE
 #else
-
-#define SOUND_BUFFER_SIZE 16384
-
+  #define GBC_BASE_RATE GBA_XTAL
 #endif
 
 typedef enum
@@ -54,7 +51,7 @@ typedef struct
   s8 fifo[32];
   u32 fifo_base;
   u32 fifo_top;
-  fixed16_16 fifo_fractional;
+  fixed8_24 fifo_fractional;
   // The + 1 is to give some extra room for linear interpolation
   // when wrapping around.
   u32 buffer_index;
@@ -109,6 +106,8 @@ extern s8 square_pattern_duty[4][8];
 extern u32 gbc_sound_master_volume_left;
 extern u32 gbc_sound_master_volume_right;
 extern u32 gbc_sound_master_volume;
+extern u32 gbc_sound_buffer_index;
+extern u32 gbc_sound_last_cpu_ticks;
 
 extern u32 sound_frequency;
 extern u32 sound_on;
@@ -122,7 +121,7 @@ extern SDL_mutex *sound_mutex;
 void sound_timer_queue8(u32 channel, u8 value);
 void sound_timer_queue16(u32 channel, u16 value);
 void sound_timer_queue32(u32 channel, u32 value);
-void sound_timer(fixed16_16 frequency_step, u32 channel);
+void sound_timer(fixed8_24 frequency_step, u32 channel);
 void sound_reset_fifo(u32 channel);
 void update_gbc_sound(u32 cpu_ticks);
 void init_sound();
@@ -320,7 +319,7 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
 
 #define sound_update_frequency_step(timer_number)                             \
   timer[timer_number].frequency_step =                                        \
-   float_to_fp16_16(16777216.0 / (timer_reload * sound_frequency))            \
+   float_to_fp8_24(GBC_BASE_RATE / (timer_reload * sound_frequency))          \
 
 #endif // IN_MEMORY_C
 

@@ -48,7 +48,7 @@ typedef struct
   u32 reload;
   u32 prescale;
   u32 stop_cpu_ticks;
-  fixed16_16 frequency_step;
+  fixed8_24 frequency_step;
   timer_ds_channel_type direct_sound_channels;
   timer_irq_type irq;
   timer_status_type status;
@@ -132,8 +132,7 @@ static u32 prescale_table[] = { 0, 6, 8, 10 };
   if(timer[timer_number].direct_sound_channels & (0x01 << channel))           \
   {                                                                           \
     direct_sound_channel[channel].buffer_index =                              \
-     (direct_sound_channel[channel].buffer_index + buffer_adjust) %           \
-     BUFFER_SIZE;                                                             \
+     (gbc_sound_buffer_index + buffer_adjust) % BUFFER_SIZE;                  \
   }                                                                           \
 
 #define trigger_timer(timer_number)                                           \
@@ -164,8 +163,8 @@ static u32 prescale_table[] = { 0, 6, 8, 10 };
       if(timer_number < 2)                                                    \
       {                                                                       \
         u32 buffer_adjust =                                                   \
-         (u32)(((float)(cpu_ticks - timer[timer_number].stop_cpu_ticks) *     \
-         sound_frequency) / 16777216.0) * 2;                                  \
+         (u32)(((float)(cpu_ticks - gbc_sound_last_cpu_ticks) *               \
+         sound_frequency) / GBC_BASE_RATE) * 2;                               \
                                                                               \
         sound_update_frequency_step(timer_number);                            \
         adjust_sound_buffer(timer_number, 0);                                 \

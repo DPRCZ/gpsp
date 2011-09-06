@@ -84,31 +84,31 @@ void sound_timer_queue32(u32 channel, u32 value)
 
 #define render_sample_left()                                                  \
   sound_buffer[buffer_index] += current_sample +                              \
-   fp16_16_to_u32((next_sample - current_sample) * fifo_fractional)           \
+   fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8))    \
 
 #define render_sample_right()                                                 \
   sound_buffer[buffer_index + 1] += current_sample +                          \
-   fp16_16_to_u32((next_sample - current_sample) * fifo_fractional)           \
+   fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8))    \
 
 #define render_sample_both()                                                  \
   dest_sample = current_sample +                                              \
-   fp16_16_to_u32((next_sample - current_sample) * fifo_fractional);          \
+   fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8));   \
   sound_buffer[buffer_index] += dest_sample;                                  \
   sound_buffer[buffer_index + 1] += dest_sample                               \
 
 #define render_samples(type)                                                  \
-  while(fifo_fractional <= 0xFFFF)                                            \
+  while(fifo_fractional <= 0xFFFFFF)                                          \
   {                                                                           \
     render_sample_##type();                                                   \
     fifo_fractional += frequency_step;                                        \
     buffer_index = (buffer_index + 2) % BUFFER_SIZE;                          \
   }                                                                           \
 
-void sound_timer(fixed16_16 frequency_step, u32 channel)
+void sound_timer(fixed8_24 frequency_step, u32 channel)
 {
   direct_sound_struct *ds = direct_sound_channel + channel;
 
-  fixed16_16 fifo_fractional = ds->fifo_fractional;
+  fixed8_24 fifo_fractional = ds->fifo_fractional;
   u32 buffer_index = ds->buffer_index;
   s16 current_sample, next_sample, dest_sample;
 
@@ -149,7 +149,7 @@ void sound_timer(fixed16_16 frequency_step, u32 channel)
   }
 
   ds->buffer_index = buffer_index;
-  ds->fifo_fractional = fp16_16_fractional_part(fifo_fractional);
+  ds->fifo_fractional = fp8_24_fractional_part(fifo_fractional);
 
   if(((ds->fifo_top - ds->fifo_base) % 32) <= 16)
   {
@@ -264,8 +264,8 @@ u32 gbc_sound_master_volume;
       if(rate > 2048)                                                         \
         rate = 2048;                                                          \
                                                                               \
-      frequency_step = float_to_fp16_16(((131072.0 / (2048 - rate)) * 8.0) /  \
-       sound_frequency);                                                      \
+      frequency_step = float_to_fp16_16(((131072.0f / (2048 - rate)) * 8.0f)  \
+       / sound_frequency);                                                    \
                                                                               \
       gs->frequency_step = frequency_step;                                    \
       gs->rate = rate;                                                        \
@@ -308,13 +308,6 @@ u32 gbc_sound_master_volume;
   }                                                                           \
 
 #define update_tone_noenvelope()                                              \
-
-#define gbc_sound_synchronize()                                               \
-  while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >        \
-   (audio_buffer_size * 2))                                                   \
-  {                                                                           \
-    SDL_CondWait(sound_cv, sound_mutex);                                      \
-  }                                                                           \
 
 #define update_tone_counters(envelope_op, sweep_op)                           \
   tick_counter += gbc_sound_tick_step;                                        \
@@ -428,19 +421,10 @@ u32 gbc_sound_master_volume;
     wave_bank[i2 + 1] = ((current_sample & 0x0F) - 8);                        \
   }                                                                           \
 
-void synchronize_sound()
-{
-  SDL_LockMutex(sound_mutex);
-
-  gbc_sound_synchronize();
-
-  SDL_UnlockMutex(sound_mutex);
-}
-
 void update_gbc_sound(u32 cpu_ticks)
 {
-  fixed16_16 buffer_ticks = float_to_fp16_16(((float)(cpu_ticks -
-   gbc_sound_last_cpu_ticks) * sound_frequency) / 16777216.0);
+  fixed16_16 buffer_ticks = float_to_fp16_16((float)(cpu_ticks -
+   gbc_sound_last_cpu_ticks) * sound_frequency / GBC_BASE_RATE);
   u32 i, i2;
   gbc_sound_struct *gs = gbc_sound_channel;
   fixed16_16 sample_index, frequency_step;
@@ -466,8 +450,8 @@ void update_gbc_sound(u32 cpu_ticks)
   SDL_LockMutex(sound_mutex);
   if(synchronize_flag)
   {
-    if(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >
-     (audio_buffer_size * 3 / 2))
+    if(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >=
+     (audio_buffer_size * 2))
     {
       while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >
        (audio_buffer_size * 3 / 2))
@@ -705,10 +689,12 @@ void reset_sound()
   gbc_sound_struct *gs = gbc_sound_channel;
   u32 i;
 
+  SDL_LockMutex(sound_mutex);
+
   sound_on = 0;
   sound_buffer_base = 0;
   sound_last_cpu_ticks = 0;
-  memset(sound_buffer, 0, audio_buffer_size);
+  memset(sound_buffer, 0, sizeof(sound_buffer));
 
   for(i = 0; i < 2; i++, ds++)
   {
@@ -736,6 +722,8 @@ void reset_sound()
     gs->sample_data = square_pattern_duty[2];
     gs->active_flag = 0;
   }
+
+  SDL_UnlockMutex(sound_mutex);
 }
 
 void sound_exit()
@@ -772,14 +760,6 @@ void init_sound()
     NULL
   };
 
-  gbc_sound_tick_step =
-   float_to_fp16_16(256.0 / sound_frequency);
-
-  init_noise_table(noise_table15, 32767, 14);
-  init_noise_table(noise_table7, 127, 6);
-
-  reset_sound();
-
   sound_mutex = SDL_CreateMutex();
   sound_cv = SDL_CreateCond();
 
@@ -792,6 +772,14 @@ void init_sound()
 #ifndef PSP_BUILD
   printf("audio: freq %d, size %d\n", sound_frequency, audio_buffer_size);
 #endif
+
+  gbc_sound_tick_step =
+   float_to_fp16_16(256.0f / sound_frequency);
+
+  init_noise_table(noise_table15, 32767, 14);
+  init_noise_table(noise_table7, 127, 6);
+
+  reset_sound();
 
   SDL_PauseAudio(0);
 }

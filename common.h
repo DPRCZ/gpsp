@@ -180,6 +180,7 @@
 
 
 typedef u32 fixed16_16;
+typedef u32 fixed8_24;
 
 #define float_to_fp16_16(value)                                               \
   (fixed16_16)((value) * 65536.0)                                             \
@@ -195,6 +196,12 @@ typedef u32 fixed16_16;
 
 #define fp16_16_fractional_part(value)                                        \
   ((value) & 0xFFFF)                                                          \
+
+#define float_to_fp8_24(value)                                                \
+  (fixed8_24)((value) * 16777216.0)                                           \
+
+#define fp8_24_fractional_part(value)                                         \
+  ((value) & 0xFFFFFF)                                                        \
 
 #define fixed_div(numerator, denominator, bits)                               \
   (((numerator * (1 << bits)) + (denominator / 2)) / denominator)             \

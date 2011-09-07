@@ -26,7 +26,7 @@ LIBS       += -ldl -lpthread -lz
 
 # Compilation:
 
-all:	$(BIN)
+all:	$(BIN) picorestore
 
 %.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -37,5 +37,14 @@ $(BIN): $(OBJS)
 	$(CC) $(OBJS) $(LIBS) -o $(BIN)
 
 clean:
-	rm -f *.o $(BIN) 
+	rm -f *.o $(BIN) picorestore
 
+# ----------- release -----------
+
+PND_MAKE ?= $(HOME)/dev/pnd/src/pandora-libraries/testdata/scripts/pnd_make.sh
+
+rel: gpsp gpsp.sh gpsp.pxml gba_icon.png picorestore readme.txt ../game_config.txt ../COPYING.DOC
+	rm -rf out
+	mkdir out
+	cp $^ out/
+	$(PND_MAKE) -p gpsp.pnd -d out -x out/gpsp.pxml -i out/gba_icon.png -c

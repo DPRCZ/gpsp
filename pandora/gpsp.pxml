@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PXML xmlns="http://openpandora.org/namespaces/PXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PXML_schema.xsd">
+<package id="package.gpsp.notaz">
+  <titles>
+    <title lang="en_US">gpSP</title>
+  </titles>
+  <version major="0" minor="9" release="2" build="7"/>
+  <author name="Exophase/notaz" website="http://notaz.gp2x.de/"/>
+</package>
+<application id="gpsp.notaz" appdata="gpsp">
+  <titles>
+    <title lang="en_US">gpSP</title>
+  </titles>
+  <title lang="en_US">gpSP</title>
+
+  <descriptions>
+    <description lang="en_US">An optimized GBA emulator.</description>
+  </descriptions>
+
+  <exec command="gpsp.sh"/>
+
+  <icon src="gba_icon.png"/>
+
+  <author name="Exophase/notaz" website="http://notaz.gp2x.de/"/>
+
+  <version major="0" minor="9" release="2" build="7"/>
+
+  <licenses>
+    <license name="GPLv2+" url="http://www.gnu.org/licenses/gpl-2.0.html" sourcecodeurl="http://notaz.gp2x.de/cgi-bin/gitweb.cgi?p=gpsp.git"/>
+  </licenses>
+
+  <info name="gpSP u7 readme" type="text/plain" src="readme.txt"/>
+ 
+  <categories>
+    <category name="Game">
+    <subcategory name="Emulator"/>
+    </category>
+  </categories>
+</application>
+</PXML>

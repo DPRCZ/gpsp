@@ -133,7 +133,7 @@ void trigger_ext_event();
 
 static const char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
 
-#ifdef PSP_BUILD
+#ifndef PSP_BUILD
 static void ChangeWorkingDirectory(char *exe)
 {
 #ifndef _WIN32_WCE
@@ -170,7 +170,6 @@ static void switch_to_romdir(void)
 static void save_romdir(void)
 {
   char buff[512];
-  int r = -1;
 
   snprintf(buff, sizeof(buff), "%s" PATH_SEPARATOR "romdir.txt", main_path);
   file_open(romdir_file, buff, write);
@@ -270,7 +269,7 @@ int main(int argc, char *argv[])
     debug_screen_printl("                                                  ");
     debug_screen_printl("When you do get it name it gba_bios.bin and put it");
 #ifdef PND_BUILD
-    debug_screen_printl("in <CD card>/pandora/appdata/gpsp/ .              ");
+    debug_screen_printl("in <SD card>/pandora/appdata/gpsp/ .              ");
 #else
     debug_screen_printl("in the same directory as gpSP.                    ");
 #endif
@@ -323,7 +322,6 @@ int main(int argc, char *argv[])
 
   if(argc > 1)
   {
-    switch_to_romdir();
     if(load_gamepak(argv[1]) == -1)
     {
 #ifndef PSP_BUILD
@@ -341,6 +339,7 @@ int main(int argc, char *argv[])
   else
   {
     char load_filename[512];
+    switch_to_romdir();
     if(load_file(file_ext, load_filename) == -1)
     {
       menu(copy_screen());

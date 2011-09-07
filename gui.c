@@ -42,7 +42,7 @@
 
 #define FILE_LIST_ROWS 25
 #define FILE_LIST_POSITION 5
-#define DIR_LIST_POSITION 360
+#define DIR_LIST_POSITION (resolution_width * 3 / 4)
 
 #endif
 

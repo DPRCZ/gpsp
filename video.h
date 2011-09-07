@@ -49,6 +49,8 @@ void debug_screen_update();
 
 extern u32 frame_speed;
 
+extern u32 resolution_width, resolution_height;
+
 extern s32 affine_reference_x[2];
 extern s32 affine_reference_y[2];
 

@@ -23,6 +23,14 @@
 #define ror(dest, value, shift)                                               \
   dest = ((value) >> shift) | ((value) << (32 - shift))                       \
 
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #define PATH_SEPARATOR "\\"
+  #define PATH_SEPARATOR_CHAR '\\'
+#else
+  #define PATH_SEPARATOR "/"
+  #define PATH_SEPARATOR_CHAR '/'
+#endif
+
 // These includes must be used before SDL is included.
 #ifdef ARM_ARCH
 

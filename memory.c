@@ -2022,11 +2022,7 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
   translation_gate_targets = 0;
   flash_device_id = FLASH_DEVICE_MACRONIX_64KB;
 
-#if (defined(PSP_BUILD) || defined(ARM_ARCH)) && !defined(_WIN32_WCE)
-  sprintf(config_path, "%s/%s", main_path, CONFIG_FILENAME);
-#else
-  sprintf(config_path, "%s\\%s", main_path, CONFIG_FILENAME);
-#endif
+  sprintf(config_path, "%s" PATH_SEPARATOR "%s", main_path, CONFIG_FILENAME);
 
   config_file = fopen(config_path, "rb");
 
@@ -2113,6 +2109,9 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
     fclose(config_file);
   }
 
+#ifndef PSP_BUILD
+  printf("game config missing\n");
+#endif
   return -1;
 }
 
@@ -2182,11 +2181,17 @@ u32 load_gamepak(char *name)
   {
     gamepak_size = (file_size + 0x7FFF) & ~0x7FFF;
 
-    strcpy(backup_filename, name);
-    strncpy(gamepak_filename, name, 512);
-    change_ext(gamepak_filename, backup_filename, ".sav");
+    strncpy(gamepak_filename, name, sizeof(gamepak_filename));
+    gamepak_filename[sizeof(gamepak_filename) - 1] = 0;
 
-    load_backup(backup_filename);
+    make_rpath(backup_filename, sizeof(backup_filename), ".sav");
+    if (!load_backup(backup_filename))
+    {
+      // try path used by older versions
+      strcpy(backup_filename, name);
+      change_ext(gamepak_filename, backup_filename, ".sav");
+      load_backup(backup_filename);
+    }
 
     memcpy(gamepak_title, gamepak_rom + 0xA0, 12);
     memcpy(gamepak_code, gamepak_rom + 0xAC, 4);

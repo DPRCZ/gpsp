@@ -767,7 +767,7 @@ s32 load_game_config_file()
   char game_config_filename[512];
   u32 file_loaded = 0;
   u32 i;
-  change_ext(gamepak_filename, game_config_filename, ".cfg");
+  make_rpath(game_config_filename, sizeof(game_config_filename), ".cfg");
 
   file_open(game_config_file, game_config_filename, read);
 
@@ -841,11 +841,7 @@ s32 load_config_file()
 {
   char config_path[512];
 
-  #if defined(_WIN32) || defined(_WIN32_WCE)
-    sprintf(config_path, "%s\\%s", main_path, GPSP_CONFIG_FILENAME);
-  #else
-    sprintf(config_path, "%s/%s", main_path, GPSP_CONFIG_FILENAME);
-  #endif
+  sprintf(config_path, "%s" PATH_SEPARATOR "%s", main_path, GPSP_CONFIG_FILENAME);
 
   file_open(config_file, config_path, read);
 
@@ -915,7 +911,7 @@ s32 save_game_config_file()
   char game_config_filename[512];
   u32 i;
 
-  change_ext(gamepak_filename, game_config_filename, ".cfg");
+  make_rpath(game_config_filename, sizeof(game_config_filename), ".cfg");
 
   file_open(game_config_file, game_config_filename, write);
 
@@ -947,11 +943,7 @@ s32 save_config_file()
 {
   char config_path[512];
 
-  #if (defined(PSP_BUILD) || defined(ARM_ARCH)) && !defined(_WIN32_WCE)
-    sprintf(config_path, "%s/%s", main_path, GPSP_CONFIG_FILENAME);
-  #else
-    sprintf(config_path, "%s\\%s", main_path, GPSP_CONFIG_FILENAME);
-  #endif
+  sprintf(config_path, "%s" PATH_SEPARATOR "%s", main_path, GPSP_CONFIG_FILENAME);
 
   file_open(config_file, config_path, write);
 
@@ -1044,22 +1036,18 @@ void get_savestate_snapshot(char *savestate_filename)
 #endif
 }
 
-void get_savestate_filename(u32 slot, char *name_buffer)
-{
-  char savestate_ext[16];
-
-  sprintf(savestate_ext, "%d.svs", slot);
-  change_ext(gamepak_filename, name_buffer, savestate_ext);
-
-  get_savestate_snapshot(name_buffer);
-}
-
 void get_savestate_filename_noshot(u32 slot, char *name_buffer)
 {
   char savestate_ext[16];
 
   sprintf(savestate_ext, "%d.svs", slot);
-  change_ext(gamepak_filename, name_buffer, savestate_ext);
+  make_rpath(name_buffer, 512, savestate_ext);
+}
+
+void get_savestate_filename(u32 slot, char *name_buffer)
+{
+  get_savestate_filename_noshot(slot, name_buffer);
+  get_savestate_snapshot(name_buffer);
 }
 
 #ifdef PSP_BUILD

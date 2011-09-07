@@ -178,6 +178,9 @@ void init_main()
 
 int main(int argc, char *argv[])
 {
+  char bios_filename[512];
+  int ret;
+
 #ifdef PSP_BUILD
   sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 0,
    vblank_interrupt_handler, NULL);
@@ -208,13 +211,11 @@ int main(int argc, char *argv[])
 
   init_video();
 
-#ifdef GP2X_BUILD
-  char bios_filename[512];
-  sprintf(bios_filename, "%s/%s", main_path, "gba_bios.bin");
-  if(load_bios(bios_filename) == -1)
-#else
-  if(load_bios("gba_bios.bin") == -1)
-#endif
+  sprintf(bios_filename, "%s" PATH_SEPARATOR "%s", main_path, "gba_bios.bin");
+  ret = load_bios(bios_filename);
+  if (ret != 0)
+    ret = load_bios("gba_bios.bin");
+  if (ret != 0)
   {
     gui_action_type gui_action = CURSOR_NONE;
 
@@ -579,10 +580,10 @@ u32 update_gba()
           frame_ticks++;
 
   #ifdef PC_BUILD
-        printf("frame update (%x), %d instructions total, %d RAM flushes\n",
+/*        printf("frame update (%x), %d instructions total, %d RAM flushes\n",
            reg[REG_PC], instruction_count - last_frame, flush_ram_count);
           last_frame = instruction_count;
-
+*/
 /*          printf("%d gbc audio updates\n", gbc_update_count);
           printf("%d oam updates\n", oam_update_count); */
           gbc_update_count = 0;
@@ -941,6 +942,20 @@ void change_ext(const char *src, char *buffer, const char *extension)
 
   if(dot_position)
     strcpy(dot_position, extension);
+}
+
+// make path: <main_path>/<romname>.<ext>
+void make_rpath(char *buff, size_t size, const char *ext)
+{
+  char *p;
+  p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
+  if (p == NULL)
+    p = gamepak_filename;
+
+  snprintf(buff, size, "%s/%s", main_path, p);
+  p = strrchr(buff, '.');
+  if (p != NULL)
+    strcpy(p, ext);
 }
 
 #define main_savestate_builder(type)                                          \

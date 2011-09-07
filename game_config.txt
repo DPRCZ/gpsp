@@ -477,7 +477,7 @@ game_code = BRLE
 vender_code = AF
 idle_loop_eliminate_target = 0800041a
 
-# Golden Sun
+# Golden Sun (U)
 game_name = Golden_Sun_A
 game_code = AGSE
 vender_code = 01
@@ -923,6 +923,24 @@ game_code = AU2P
 vender_code = 8P
 iwram_stack_optimize = no
 
+# Motoracer Advance (E)
+game_name = MOTORACERADV
+game_code = A9MP
+vender_code = 41
+idle_loop_eliminate_target = 03001cf8
+
+# Kim Possible 2 (U)
+game_name = KIMPOSSIBLE2
+game_code = BKME
+vender_code = 4Q
+idle_loop_eliminate_target = 080008a2
+
+# Kim Possible 2 (E)
+game_name = KIMPOSSIBLE2
+game_code = BKMP
+vender_code = 4Q
+idle_loop_eliminate_target = 080008a2
+
 # This is needed to make the game work.
 # Another World (Homebrew)
 game_name = FoxAnWorld
@@ -930,3 +948,161 @@ game_code = Home
 vender_code = 00
 translation_gate_target = 03000f1c
 
+
+# J.LEAGUE プロサッカークラブをつくろう！アドバンス (J)
+# J League Pro Soccer Club wo Tsukurou Advance (J)
+game_name = SAKATUKUADV
+game_code = AC2J
+vender_code = 8P
+iwram_stack_optimize = no
+
+# アニマル横町 どきどき進級試験!の巻 (J)
+# Animal Yokochou Dokidoki Shinkyuu Shiken (J)
+game_name = ANIYOKO2
+game_code = BAXJ
+vender_code = A4
+iwram_stack_optimize = no
+
+# アラジン (J)
+# Disney's Aladdin (J)
+game_name = ALADDIN
+game_code = AJ6J
+vender_code = 08
+iwram_stack_optimize = no
+
+# うえきの法則 神器炸裂！能力者バトル (J)
+# Ueki no Housoku Jingi Sakuretsu! Nouryokusya Battle (J)
+game_name = UEKIJINGIBTL
+game_code = BUHJ
+vender_code = D9
+iwram_stack_optimize = no
+
+# オリエンタルブルー 青の天外 (J)
+# Oriental Blue - Ao no Tengai (J)
+game_name = ORIENTALBLUE
+game_code = AORJ
+vender_code = 01
+iwram_stack_optimize = no
+
+# カルチョビット (J)
+# Calciobit (J)
+game_name = CALCIOBIT01
+game_code = BIXJ
+vender_code = 01
+flash_rom_type = 128KB
+
+# ゲームボーイウォーズアドバンス1+2 (J)
+# Game Boy Wars Advance 1+2 (J)
+game_name = GBWARS1+2
+game_code = BGWJ
+vender_code = 01
+flash_rom_type = 128KB
+
+# こいぬちゃんのはじめてのおさんぽ (J)
+# Koinu-Chan no Hajimete no Osanpo (J)
+game_name = OSANPO
+game_code = BISJ
+vender_code = 1Q
+iwram_stack_optimize = no
+
+# チキン・リトル (J)
+# Chicken Little (J)
+game_name = CLITTLEJ    
+game_code = BCHJ
+vender_code = G9
+iwram_stack_optimize = no
+
+# とっとこハム太郎 ハムハムスポーツ (JU)
+# Tottoko Hamutaro Hamuhamu Sports (JU)
+game_name = HAMSPORTS
+game_code = B85A
+vender_code = 01
+iwram_stack_optimize = no
+
+# 西原理恵子の殿堂麻雀 (J)
+# Nishihara Rieko no Dendou Mahjong (J)
+game_name = DENDOHMAJANG
+game_code = ASMJ
+vender_code = AG
+iwram_stack_optimize = no
+
+# ボンバーマンジェッターズ ゲームコレクション (J)
+# Bomberman Jetters Game Collection (J)
+game_name = BOMBERMANJGC
+game_code = BOMJ
+vender_code = 18
+iwram_stack_optimize = no
+
+# ポケットモンスター リーフグリーン (J)
+# Pokemon Leaf Green (J)
+game_name = POKEMON LEAF
+game_code = BPGJ
+vender_code = 01
+flash_rom_type = 128KB
+
+# マジカル封神 (J)
+# Magical Houshin (J)
+game_name = M HOUSHIN
+game_code = AJOJ
+vender_code = C8
+iwram_stack_optimize = no
+
+# メダル オブ オナー (J)
+# Medal of Honor (J)
+game_name = INFILTRATOR
+game_code = BMHJ
+vender_code = 13
+iwram_stack_optimize = no
+
+# ロボットポンコッツ2 クロスバージョン (J)
+# Robot Ponkotto 2 - Cross Version (J)
+game_name = ROBOPON2CROS
+game_code = ACVJ
+vender_code = 18
+iwram_stack_optimize = no
+
+# ロボットポンコッツ2 リングバージョン (J)
+# Robot Ponkotto 2 - Ring Version (J)
+game_name = ROBOPON2RING
+game_code = ARPJ
+vender_code = 18
+iwram_stack_optimize = no
+
+# 桃太郎電鉄G ～ゴールド・デッキを作れ！～ (J)
+# Momotarou Densetsu G - Gold Deck wo Tsukure! (J)
+game_name = MOMOTETSU-G
+game_code = BM2J
+vender_code = 18
+iwram_stack_optimize = no
+
+# Open Season (U)
+game_name = OPEN SEASON
+game_code = BOAE
+vender_code = 41
+idle_loop_eliminate_target = 08066378
+
+# Robopon 2 Cross Version (U)
+game_name = ROBOPON2CROS
+game_code = ACVE
+vender_code = EB
+iwram_stack_optimize = no
+flash_rom_type = 512KB
+
+# Robopon 2 Ring Version (U)
+game_name = ROBOPON2RING
+game_code = ARPE
+vender_code = EB
+iwram_stack_optimize = no
+flash_rom_type = 512KB
+
+# Disney's Aladdin (E)
+game_name = ALADDIN
+game_code = BADP
+vender_code = 08
+iwram_stack_optimize = no
+
+# Disney's Aladdin (U)
+game_name = ALADDIN
+game_code = BADE
+vender_code = 08
+iwram_stack_optimize = no

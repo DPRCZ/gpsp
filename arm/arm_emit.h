@@ -1931,6 +1931,9 @@ void execute_swi_hle_div_thumb();
 
 void execute_swi_hle_div_c()
 {
+  if (reg[1] == 0)
+    // real BIOS supposedly locks up, but game can recover on interrupt
+    return;
   s32 result = (s32)reg[0] / (s32)reg[1];
   reg[1] = (s32)reg[0] % (s32)reg[1];
   reg[0] = result;

@@ -148,10 +148,10 @@
 #endif
 
   #define file_read(filename_tag, buffer, size)                               \
-    fread(buffer, size, 1, filename_tag)                                      \
+    fread(buffer, 1, size, filename_tag)                                      \
 
   #define file_write(filename_tag, buffer, size)                              \
-    fwrite(buffer, size, 1, filename_tag)                                     \
+    fwrite(buffer, 1, size, filename_tag)                                     \
 
   #define file_seek(filename_tag, offset, type)                               \
     fseek(filename_tag, offset, type)                                         \

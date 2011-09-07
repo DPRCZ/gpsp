@@ -51,28 +51,30 @@ u32 load_file_zip(char *filename)
   u8 *buffer = NULL;
   u8 *cbuffer;
   char *ext;
+  int ret;
 
   file_open(fd, filename, read);
 
   if(!file_check_valid(fd))
     return -1;
 
-#if 0 // EDIT: Why this while(1) is used is unknown and can cause a crash.
-  while(1)
-#endif
+  while (1)
   {
-    file_read(fd, &data, sizeof(struct SZIPFileHeader));
+    ret = file_read(fd, &data, sizeof(data));
+    if (ret != sizeof(data))
+      break;
 
-    // EDIT: Check if this is a zip file without worrying about endian
-	// It checks for the following: 0x50 0x4B 0x03 0x04 (PK..)
-    // Used to be: if(data.Sig != 0x04034b50) break;
-	if( data.Sig[0] != 0x50 || data.Sig[1] != 0x4B ||
-		data.Sig[2] != 0x03 || data.Sig[3] != 0x04 )
-	{
-		goto outcode;
-	}
+    // It checks for the following: 0x50 0x4B 0x03 0x04 (PK..)
+    if( data.Sig[0] != 0x50 || data.Sig[1] != 0x4B ||
+        data.Sig[2] != 0x03 || data.Sig[3] != 0x04 )
+    {
+      break;
+    }
 
-    file_read(fd, tmp, data.FilenameLength);
+    ret = file_read(fd, tmp, data.FilenameLength);
+    if (ret != data.FilenameLength)
+      break;
+
     tmp[data.FilenameLength] = 0; // end string
 
     if(data.ExtraFieldLength)
@@ -88,7 +90,7 @@ u32 load_file_zip(char *filename)
 
     // file is too big
     if(data.DataDescriptor.UncompressedSize > gamepak_ram_buffer_size)
-      goto outcode;
+      goto skip;
 
     if(!strcasecmp(ext, "bin") || !strcasecmp(ext, "gba"))
     {
@@ -100,7 +102,6 @@ u32 load_file_zip(char *filename)
         case 0:
           retval = data.DataDescriptor.UncompressedSize;
           file_read(fd, buffer, retval);
-
           goto outcode;
 
         case 8:
@@ -115,9 +116,9 @@ u32 load_file_zip(char *filename)
 
           stream.next_out = (Bytef*)buffer;
 
-		  // EDIT: Now uses proper conversion of data types for retval.
-		  retval = (u32)data.DataDescriptor.UncompressedSize;
-		  stream.avail_out = data.DataDescriptor.UncompressedSize;
+          // EDIT: Now uses proper conversion of data types for retval.
+          retval = (u32)data.DataDescriptor.UncompressedSize;
+          stream.avail_out = data.DataDescriptor.UncompressedSize;
 
           stream.zalloc = (alloc_func)0;
           stream.zfree = (free_func)0;
@@ -146,6 +147,9 @@ u32 load_file_zip(char *filename)
         }
       }
     }
+
+skip:
+    file_seek(fd, data.DataDescriptor.CompressedSize, SEEK_CUR);
   }
 
 outcode:

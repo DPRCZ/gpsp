@@ -133,8 +133,8 @@ void trigger_ext_event();
 
 static const char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
 
-#ifdef ARM_ARCH
-void ChangeWorkingDirectory(char *exe)
+#ifdef PSP_BUILD
+static void ChangeWorkingDirectory(char *exe)
 {
 #ifndef _WIN32_WCE
   char *s = strrchr(exe, '/');
@@ -145,6 +145,49 @@ void ChangeWorkingDirectory(char *exe)
   }
 #endif
 }
+
+static void switch_to_romdir(void)
+{
+  char buff[256];
+  int r;
+  
+  file_open(romdir_file, "romdir.txt", read);
+
+  if(file_check_valid(romdir_file))
+  {
+    r = file_read(romdir_file, buff, sizeof(buff) - 1);
+    if (r > 0)
+    {
+      buff[r] = 0;
+      while (r > 0 && isspace(buff[r-1]))
+        buff[--r] = 0;
+      chdir(buff);
+    }
+    file_close(romdir_file);
+  }
+}
+
+static void save_romdir(void)
+{
+  char buff[512];
+  int r = -1;
+
+  snprintf(buff, sizeof(buff), "%s" PATH_SEPARATOR "romdir.txt", main_path);
+  file_open(romdir_file, buff, write);
+
+  if(file_check_valid(romdir_file))
+  {
+    if (getcwd(buff, sizeof(buff)))
+    {
+      file_write(romdir_file, buff, strlen(buff));
+    }
+    file_close(romdir_file);
+  }
+}
+#else
+void ChangeWorkingDirectory(char *exe) {}
+static void switch_to_romdir(void) {}
+static void save_romdir(void) {}
 #endif
 
 void init_main()
@@ -191,10 +234,8 @@ int main(int argc, char *argv[])
 
   // Copy the directory path of the executable into main_path
 
-#ifdef ARM_ARCH
   // ChangeWorkingDirectory will null out the filename out of the path
   ChangeWorkingDirectory(argv[0]);
-#endif
 
   getcwd(main_path, 512);
 
@@ -282,6 +323,7 @@ int main(int argc, char *argv[])
 
   if(argc > 1)
   {
+    switch_to_romdir();
     if(load_gamepak(argv[1]) == -1)
     {
 #ifndef PSP_BUILD
@@ -836,6 +878,8 @@ void synchronize()
 
 void quit()
 {
+  save_romdir();
+
   if(!update_backup_flag)
     update_backup_force();
 

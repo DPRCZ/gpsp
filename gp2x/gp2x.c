@@ -244,28 +244,6 @@ u32 wiz_load_gamepak(char *name)
 
 #endif
 
-static int get_romdir(char *buff, size_t size)
-{
-  FILE *f;
-  char *s;
-  int r = -1;
-  
-  f = fopen("romdir.txt", "r");
-  if (f == NULL)
-    return -1;
-
-  s = fgets(buff, size, f);
-  if (s)
-  {
-    r = strlen(s);
-    while (r > 0 && isspace(buff[r-1]))
-      buff[--r] = 0;
-  }
-
-  fclose(f);
-  return r;
-}
-
 void gpsp_plat_init(void)
 {
   char buff[256];
@@ -281,9 +259,6 @@ void gpsp_plat_init(void)
   fb_video_init();
 #endif
 
-  if (get_romdir(buff, sizeof(buff)) > 0)
-    chdir(buff);
-
   gp2x_sound_volume(1);
 }
 
@@ -293,17 +268,6 @@ void gpsp_plat_quit(void)
 
   getcwd(buff1, sizeof(buff1));
   chdir(main_path);
-  if (get_romdir(buff2, sizeof(buff2)) >= 0 &&
-    strcmp(buff1, buff2) != 0)
-  {
-    FILE *f = fopen("romdir.txt", "w");
-    if (f != NULL)
-    {
-      printf("writing romdir: %s\n", buff1);
-      fprintf(f, "%s", buff1);
-      fclose(f);
-    }
-  }
 
   warm_finish();
 #ifdef WIZ_BUILD

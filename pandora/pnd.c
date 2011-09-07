@@ -92,7 +92,7 @@ u32 gamepad_config_map[PLAT_BUTTON_COUNT] =
 
 static const u32 xk_to_gkey[] = {
   XK_Up, XK_Left, XK_Down, XK_Right, XK_Alt_L, XK_Control_L,
-  XK_Shift_L, XK_Control_R, XK_Home, XK_End, XK_Page_Down, XK_Page_Up,
+  XK_Shift_R, XK_Control_R, XK_Home, XK_End, XK_Page_Down, XK_Page_Up,
   XK_1, XK_2, XK_3, XK_4, XK_space,
 };
 

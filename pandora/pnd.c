@@ -104,7 +104,7 @@ static const u8 gkey_to_cursor[32] = {
 
 struct vout_fbdev *fb;
 
-static int omap_setup_layer(int fd, int enabled, int x, int y, int w, int h, int first_call)
+static int omap_setup_layer(int fd, int enabled, int x, int y, int w, int h)
 {
   struct omapfb_plane_info pi = { 0, };
   struct omapfb_mem_info mi = { 0, };
@@ -130,8 +130,8 @@ static int omap_setup_layer(int fd, int enabled, int x, int y, int w, int h, int
       perror("SETUP_PLANE");
   }
 
-  if (first_call) {
-    mi.size = 640*512*3*3;
+  if (mi.size < 240*160*2*4) {
+    mi.size = 240*160*2*4;
     ret = ioctl(fd, OMAPFB_SETUP_MEM, &mi);
     if (ret != 0) {
       perror("SETUP_MEM");
@@ -183,7 +183,7 @@ void gpsp_plat_init(void)
     exit(1);
   }
 
-  ret = omap_setup_layer(fd, 0, 0, 0, 400, 272, 1);
+  ret = omap_setup_layer(fd, 0, 0, 0, 400, 272);
   close(fd);
   if (ret != 0) {
     fprintf(stderr, "failed to set up layer, exiting.\n");
@@ -205,7 +205,7 @@ void gpsp_plat_init(void)
 void gpsp_plat_quit(void)
 {
   xenv_finish();
-  omap_setup_layer(vout_fbdev_get_fd(fb), 0, 0, 0, 0, 0, 0);
+  omap_setup_layer(vout_fbdev_get_fd(fb), 0, 0, 0, 0, 0);
   vout_fbdev_finish(fb);
   SDL_Quit();
 }
@@ -306,7 +306,7 @@ void fb_set_mode(int w, int h, int buffers, int scale, int filter)
   lx = 800 / 2 - lw / 2;
   ly = 480 / 2 - lh / 2;
 
-  omap_setup_layer(vout_fbdev_get_fd(fb), 1, lx, ly, lw, lh, 0);
+  omap_setup_layer(vout_fbdev_get_fd(fb), 1, lx, ly, lw, lh);
   set_filter(filter);
 
   vout_fbdev_resize(fb, w, h, 16, 0, 0, 0, 0, buffers);

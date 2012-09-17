@@ -1519,7 +1519,6 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   thumb_decode_##type();                                                      \
   u32 __rn = prepare_load_reg(reg_rn, _rs);                                   \
   u32 __rd = prepare_store_reg(reg_rd, _rd);                                  \
-  generate_load_reg(reg_rn, _rs);                                             \
   thumb_generate_op_##op_type(name, _rd, _rs, _rn);                           \
   complete_store_reg(__rd, _rd);                                              \
 }                                                                             \

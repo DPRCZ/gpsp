@@ -31,7 +31,7 @@ expand_blend:
   cmp r3, #16                     @ if(blend_a > 16)
   movgt r3, #16                   @   blend_a = 16
   cmp r4, #16                     @ if(blend_b > 16)
-  movgt r3, #16                   @   blend_b = 16
+  movgt r4, #16                   @   blend_b = 16
 
   ldr r14, 6b + 4                 @ r14 = palette_ram_converted
   ldr r12, 6b + 8                 @ r12 = 0x04000200

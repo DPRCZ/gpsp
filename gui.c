@@ -808,7 +808,7 @@ s32 load_game_config_file()
 
       for(i = 0; i < 10; i++)
       {
-        cheats[i].cheat_active = file_options[3 + i] % 2;
+        cheats[i].cheat_active = file_options[4 + i] % 2;
         cheats[i].cheat_name[0] = 0;
       }
 

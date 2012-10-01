@@ -8,5 +8,6 @@ u32 gpsp_plat_buttons_to_cursor(u32 buttons);
 extern u32 button_plat_mask_to_config[PLAT_BUTTON_COUNT];
 
 void *fb_flip_screen(void);
-void fb_set_mode(int w, int h, int buffers, int scale, int filter);
+void fb_set_mode(int w, int h, int buffers, int scale,
+	int filter, int filter2);
 void fb_wait_vsync(void);

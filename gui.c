@@ -762,6 +762,11 @@ static const char *scale_options[] =
 #endif
 };
 
+const char *filter2_options[] =
+{
+  "none", "scale2x", "scale3x", "eagle2x"
+};
+
 s32 load_game_config_file()
 {
   char game_config_filename[512];
@@ -837,6 +842,8 @@ s32 load_game_config_file()
   return -1;
 }
 
+#define FILE_OPTION_COUNT 24
+
 s32 load_config_file()
 {
   char config_path[512];
@@ -850,7 +857,7 @@ s32 load_config_file()
     u32 file_size = file_length(config_path, config_file);
 
     // Sanity check: File size must be the right size
-    if(file_size == 92)
+    if(file_size == FILE_OPTION_COUNT * 4)
     {
       u32 file_options[file_size / 4];
       file_read_array(config_file, file_options);
@@ -859,6 +866,8 @@ s32 load_config_file()
         (sizeof(scale_options) / sizeof(scale_options[0]));
       screen_filter = file_options[1] % 2;
       global_enable_audio = file_options[2] % 2;
+      screen_filter2 = file_options[23] %
+        (sizeof(filter2_options) / sizeof(filter2_options[0]));
 
 #ifdef PSP_BUILD
       audio_buffer_size_number = file_options[3] % 10;
@@ -951,7 +960,7 @@ s32 save_config_file()
 
   if(file_check_valid(config_file))
   {
-    u32 file_options[23];
+    u32 file_options[FILE_OPTION_COUNT];
 
     file_options[0] = screen_scale;
     file_options[1] = screen_filter;
@@ -960,6 +969,7 @@ s32 save_config_file()
     file_options[4] = update_backup_flag;
     file_options[5] = global_enable_analog;
     file_options[6] = analog_sensitivity_level;
+    file_options[23] = screen_filter2;
 
 #ifndef PC_BUILD
     u32 i;
@@ -1327,6 +1337,12 @@ u32 menu(u16 *original_screen)
      "smooth image, at the cost of being blurry and having less vibrant\n"
      "colors.", 3),
 #endif
+#ifdef PND_BUILD
+    string_selection_option(NULL, "Scaling filter", filter2_options,
+     (u32 *)(&screen_filter2),
+     sizeof(filter2_options) / sizeof(filter2_options[0]),
+     "Optional pixel art scaling filter", 4),
+#endif
     string_selection_option(NULL, "Frameskip type", frameskip_options,
      (u32 *)(&current_frameskip_type), 3,
 #ifndef GP2X_BUILD
@@ -1373,7 +1389,8 @@ u32 menu(u16 *original_screen)
      "This option requires gpSP to be restarted before it will take effect.",
 #else
      "Set the size (in bytes) of the audio buffer.\n"
-     "This option requires gpSP restart to take effect.",
+     "This option requires gpSP restart to take effect.\n"
+     "Settable values may be limited by SDL implementation.",
 #endif
      10),
     submenu_option(NULL, "Back", "Return to the main menu.", 12)

@@ -25,6 +25,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+#include "../arm/neon_scale2x.h"
+#include "../arm/neon_scale3x.h"
+#include "../arm/neon_eagle2x.h"
 #include "linux/fbdev.h"
 #include "linux/xenv.h"
 
@@ -103,6 +106,19 @@ static const u8 gkey_to_cursor[32] = {
 };
 
 struct vout_fbdev *fb;
+static void *fb_current;
+static int bounce_buf[400 * 272 * 2 / 4];
+static int src_w = 240, src_h = 160;
+static enum software_filter {
+  SWFILTER_NONE = 0,
+  SWFILTER_SCALE2X,
+  SWFILTER_SCALE3X,
+  SWFILTER_EAGLE2X,
+} sw_filter;
+
+// (240*3 * 160*3 * 2 * 3)
+#define MAX_VRAM_SIZE (400*2 * 272*2 * 2 * 3)
+
 
 static int omap_setup_layer(int fd, int enabled, int x, int y, int w, int h)
 {
@@ -130,8 +146,9 @@ static int omap_setup_layer(int fd, int enabled, int x, int y, int w, int h)
       perror("SETUP_PLANE");
   }
 
-  if (mi.size < 240*160*2*4) {
-    mi.size = 240*160*2*4;
+  /* alloc enough for 3x scaled tripple buffering */
+  if (mi.size < MAX_VRAM_SIZE) {
+    mi.size = MAX_VRAM_SIZE;
     ret = ioctl(fd, OMAPFB_SETUP_MEM, &mi);
     if (ret != 0) {
       perror("SETUP_MEM");
@@ -190,9 +207,10 @@ void gpsp_plat_init(void)
     exit(1);
   }
 
-  w = 240;
-  h = 160;
-  fb = vout_fbdev_init("/dev/fb1", &w, &h, 16, 4);
+  // double of original menu size
+  w = 400*2;
+  h = 272*2;
+  fb = vout_fbdev_init("/dev/fb1", &w, &h, 16, 3);
   if (fb == NULL) {
     fprintf(stderr, "vout_fbdev_init failed\n");
     exit(1);
@@ -263,7 +281,29 @@ static void set_filter(int is_filtered)
 
 void *fb_flip_screen(void)
 {
-  return vout_fbdev_flip(fb);
+  void *ret = bounce_buf;
+  void *s = bounce_buf;
+
+  switch (sw_filter) {
+  case SWFILTER_SCALE2X:
+    neon_scale2x_16_16(s, fb_current, src_w, src_w*2, src_w*2*2, src_h);
+    break;
+  case SWFILTER_SCALE3X:
+    neon_scale3x_16_16(s, fb_current, src_w, src_w*2, src_w*3*2, src_h);
+    break;
+  case SWFILTER_EAGLE2X:
+    neon_eagle2x_16_16(s, fb_current, src_w, src_w*2, src_w*2*2, src_h);
+    break;
+  case SWFILTER_NONE:
+  default:
+    break;
+  }
+
+  fb_current = vout_fbdev_flip(fb);
+  if (sw_filter == SWFILTER_NONE)
+    ret = fb_current;
+
+  return ret;
 }
 
 void fb_wait_vsync(void)
@@ -271,9 +311,12 @@ void fb_wait_vsync(void)
   vout_fbdev_wait_vsync(fb);
 }
 
-void fb_set_mode(int w, int h, int buffers, int scale, int filter)
+void fb_set_mode(int w, int h, int buffers, int scale,
+ int filter, int filter2)
 {
   int lx, ly, lw = w, lh = h;
+  int multiplier;
+
   switch (scale) {
     case 0:
       lw = w;
@@ -292,8 +335,8 @@ void fb_set_mode(int w, int h, int buffers, int scale, int filter)
       lh = 480;
       break;
     case 15:
-      lw = w * 2;
-      lh = h + h /2;
+      lw = 800;
+      lh = 480;
       break;
     default:
       fprintf(stderr, "unknown scale: %d\n", scale);
@@ -309,7 +352,30 @@ void fb_set_mode(int w, int h, int buffers, int scale, int filter)
   omap_setup_layer(vout_fbdev_get_fd(fb), 1, lx, ly, lw, lh);
   set_filter(filter);
 
-  vout_fbdev_resize(fb, w, h, 16, 0, 0, 0, 0, buffers);
+  sw_filter = filter2;
+  if (w != 240) // menu
+    sw_filter = SWFILTER_SCALE2X;
+
+  switch (sw_filter) {
+  case SWFILTER_SCALE2X:
+    multiplier = 2;
+    break;
+  case SWFILTER_SCALE3X:
+    multiplier = 3;
+    break;
+  case SWFILTER_EAGLE2X:
+    multiplier = 2;
+    break;
+  case SWFILTER_NONE:
+  default:
+    multiplier = 1;
+    break;
+  }
+
+  fb_current = vout_fbdev_resize(fb, w * multiplier, h * multiplier,
+                                 16, 0, 0, 0, 0, buffers);
+  src_w = w;
+  src_h = h;
 }
 
 // vim:shiftwidth=2:expandtab

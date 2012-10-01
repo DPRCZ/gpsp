@@ -96,9 +96,18 @@ typedef enum
   filter_bilinear
 } video_filter_type;
 
+typedef enum
+{
+  filter2_none,
+  filter2_scale2x,
+  filter2_scale3x,
+  filter2_eagle2x,
+} video_filter_type2;
+
 extern video_scale_type screen_scale;
 extern video_scale_type current_scale;
 extern video_filter_type screen_filter;
+extern video_filter_type2 screen_filter2;
 
 void set_gba_resolution(video_scale_type scale);
 

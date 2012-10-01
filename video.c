@@ -3635,6 +3635,7 @@ void init_video()
 video_scale_type screen_scale = scaled_aspect;
 video_scale_type current_scale = scaled_aspect;
 video_filter_type screen_filter = filter_bilinear;
+video_filter_type2 screen_filter2 = filter2_none;
 
 
 #ifdef PSP_BUILD
@@ -3804,7 +3805,7 @@ void video_resolution_large()
   resolution_width = 400;
   resolution_height = 272;
 
-  fb_set_mode(400, 272, 1, 15, screen_filter);
+  fb_set_mode(400, 272, 1, 15, screen_filter, screen_filter2);
   flip_screen();
   clear_screen(0);
 }
@@ -3814,7 +3815,7 @@ void video_resolution_small()
   resolution_width = 240;
   resolution_height = 160;
 
-  fb_set_mode(240, 160, 4, screen_scale, screen_filter);
+  fb_set_mode(240, 160, 3, screen_scale, screen_filter, screen_filter2);
   flip_screen();
   clear_screen(0);
 }

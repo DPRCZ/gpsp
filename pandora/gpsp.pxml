@@ -4,7 +4,7 @@
   <titles>
     <title lang="en_US">gpSP</title>
   </titles>
-  <version major="0" minor="9" release="2" build="7"/>
+  <version major="0" minor="9" release="2" build="8"/>
   <author name="Exophase/notaz" website="http://notaz.gp2x.de/"/>
 </package>
 <application id="gpsp.notaz" appdata="gpsp">
@@ -23,13 +23,13 @@
 
   <author name="Exophase/notaz" website="http://notaz.gp2x.de/"/>
 
-  <version major="0" minor="9" release="2" build="7"/>
+  <version major="0" minor="9" release="2" build="8"/>
 
   <licenses>
     <license name="GPLv2+" url="http://www.gnu.org/licenses/gpl-2.0.html" sourcecodeurl="http://notaz.gp2x.de/cgi-bin/gitweb.cgi?p=gpsp.git"/>
   </licenses>
 
-  <info name="gpSP u7 readme" type="text/plain" src="readme.txt"/>
+  <info name="gpSP u8 readme" type="text/plain" src="readme.txt"/>
  
   <categories>
     <category name="Game">

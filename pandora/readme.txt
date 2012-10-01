@@ -19,6 +19,11 @@ as well as development history of this project.
 
 Changelog:
 
+0.9-2xb u8
+- fixed tv-out
+- integrated M-HT's neon scalers
+- merged an assorment of calc84maniac's bugfixes
+
 0.9-2xb u7
 - Pandora port, using hardware scaler for video output.
 - Fixed a few portablility issues in ARM asm and sound code.

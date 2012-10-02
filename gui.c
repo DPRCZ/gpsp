@@ -767,6 +767,22 @@ const char *filter2_options[] =
   "none", "scale2x", "scale3x", "eagle2x"
 };
 
+#ifndef PSP_BUILD
+static const char *audio_buffer_options[] =
+{
+  "16 bytes", "32 bytes", "64 bytes",
+  "128 bytes", "256 bytes", "512 bytes", "1024 bytes", "2048 bytes",
+  "4096 bytes", "8192 bytes", "16284 bytes"
+};
+#else
+const char *audio_buffer_options[] =
+{
+  "3072 bytes", "4096 bytes", "5120 bytes", "6144 bytes", "7168 bytes",
+  "8192 bytes", "9216 bytes", "10240 bytes", "11264 bytes", "12288 bytes"
+};
+#endif
+
+
 s32 load_game_config_file()
 {
   char game_config_filename[512];
@@ -842,7 +858,22 @@ s32 load_game_config_file()
   return -1;
 }
 
-#define FILE_OPTION_COUNT 24
+enum file_options {
+  fo_screen_scale = 0,
+  fo_screen_filter,
+  fo_global_enable_audio,
+  fo_audio_buffer_size,
+  fo_update_backup_flag,
+  fo_global_enable_analog,
+  fo_analog_sensitivity_level,
+  fo_screen_filter2,
+  fo_main_option_count,
+};
+
+#ifdef PC_BUILD
+#define PLAT_BUTTON_COUNT 0
+#endif
+#define FILE_OPTION_COUNT (fo_main_option_count + PLAT_BUTTON_COUNT)
 
 s32 load_config_file()
 {
@@ -862,22 +893,19 @@ s32 load_config_file()
       u32 file_options[file_size / 4];
       file_read_array(config_file, file_options);
 
-      screen_scale = file_options[0] %
+      screen_scale = file_options[fo_screen_scale] %
         (sizeof(scale_options) / sizeof(scale_options[0]));
-      screen_filter = file_options[1] % 2;
-      global_enable_audio = file_options[2] % 2;
-      screen_filter2 = file_options[23] %
+      screen_filter = file_options[fo_screen_filter] % 2;
+      global_enable_audio = file_options[fo_global_enable_audio] % 2;
+      screen_filter2 = file_options[fo_screen_filter2] %
         (sizeof(filter2_options) / sizeof(filter2_options[0]));
 
-#ifdef PSP_BUILD
-      audio_buffer_size_number = file_options[3] % 10;
-#else
-      audio_buffer_size_number = file_options[3] % 11;
-#endif
+      audio_buffer_size_number = file_options[fo_audio_buffer_size] %
+        (sizeof(audio_buffer_options) / sizeof(audio_buffer_options[0]));
 
-      update_backup_flag = file_options[4] % 2;
-      global_enable_analog = file_options[5] % 2;
-      analog_sensitivity_level = file_options[6] % 8;
+      update_backup_flag = file_options[fo_update_backup_flag] % 2;
+      global_enable_analog = file_options[fo_global_enable_analog] % 2;
+      analog_sensitivity_level = file_options[fo_analog_sensitivity_level] % 8;
 
 #ifdef PSP_BUILD
     scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
@@ -889,9 +917,9 @@ s32 load_config_file()
 #ifndef PC_BUILD
       u32 i;
       s32 menu_button = -1;
-      for(i = 0; i < 16; i++)
+      for(i = 0; i < PLAT_BUTTON_COUNT; i++)
       {
-        gamepad_config_map[i] = file_options[7 + i] %
+        gamepad_config_map[i] = file_options[fo_main_option_count + i] %
          (BUTTON_ID_NONE + 1);
 
         if(gamepad_config_map[i] == BUTTON_ID_MENU)
@@ -900,9 +928,9 @@ s32 load_config_file()
         }
       }
 
-      if(menu_button == -1)
+      if(menu_button == -1 && PLAT_MENU_BUTTON >= 0)
       {
-        gamepad_config_map[0] = BUTTON_ID_MENU;
+        gamepad_config_map[PLAT_MENU_BUTTON] = BUTTON_ID_MENU;
       }
 #endif
 
@@ -962,20 +990,20 @@ s32 save_config_file()
   {
     u32 file_options[FILE_OPTION_COUNT];
 
-    file_options[0] = screen_scale;
-    file_options[1] = screen_filter;
-    file_options[2] = global_enable_audio;
-    file_options[3] = audio_buffer_size_number;
-    file_options[4] = update_backup_flag;
-    file_options[5] = global_enable_analog;
-    file_options[6] = analog_sensitivity_level;
-    file_options[23] = screen_filter2;
+    file_options[fo_screen_scale] = screen_scale;
+    file_options[fo_screen_filter] = screen_filter;
+    file_options[fo_global_enable_audio] = global_enable_audio;
+    file_options[fo_audio_buffer_size] = audio_buffer_size_number;
+    file_options[fo_update_backup_flag] = update_backup_flag;
+    file_options[fo_global_enable_analog] = global_enable_analog;
+    file_options[fo_analog_sensitivity_level] = analog_sensitivity_level;
+    file_options[fo_screen_filter2] = screen_filter2;
 
 #ifndef PC_BUILD
     u32 i;
-    for(i = 0; i < 16; i++)
+    for(i = 0; i < PLAT_BUTTON_COUNT; i++)
     {
-      file_options[7 + i] = gamepad_config_map[i];
+      file_options[fo_main_option_count + i] = gamepad_config_map[i];
     }
 #endif
 
@@ -1295,21 +1323,6 @@ u32 menu(u16 *original_screen)
 
   const char *frameskip_options[] = { "automatic", "manual", "off" };
   const char *frameskip_variation_options[] = { "uniform", "random" };
-
-#ifndef PSP_BUILD
-  static const char *audio_buffer_options[] =
-  {
-    "16 bytes", "32 bytes", "64 bytes",
-    "128 bytes", "256 bytes", "512 bytes", "1024 bytes", "2048 bytes",
-    "4096 bytes", "8192 bytes", "16284 bytes"
-  };
-#else
-  const char *audio_buffer_options[] =
-  {
-    "3072 bytes", "4096 bytes", "5120 bytes", "6144 bytes", "7168 bytes",
-    "8192 bytes", "9216 bytes", "10240 bytes", "11264 bytes", "12288 bytes"
-  };
-#endif
 
   static const char *update_backup_options[] = { "Exit only", "Automatic" };
 

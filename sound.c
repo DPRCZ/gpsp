@@ -734,12 +734,18 @@ void sound_exit()
   sound_exit_flag = 1;
   SDL_CondSignal(sound_cv);
   SDL_CloseAudio();
+  SDL_Delay(200);
+  SDL_DestroyMutex(sound_mutex);
+  sound_mutex = NULL;
+  SDL_DestroyCond(sound_cv);
+  sound_cv = NULL;
 }
 
-void init_sound()
+void init_sound(int need_reset)
 {
   SDL_AudioSpec sound_settings;
 
+  sound_exit_flag = 0;
 #ifdef PSP_BUILD
   audio_buffer_size = (audio_buffer_size_number * 1024) + 3072;
 #else
@@ -779,7 +785,8 @@ void init_sound()
   init_noise_table(noise_table15, 32767, 14);
   init_noise_table(noise_table7, 127, 6);
 
-  reset_sound();
+  if (need_reset)
+    reset_sound();
 
   SDL_PauseAudio(0);
 }

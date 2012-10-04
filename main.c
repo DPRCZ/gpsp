@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
   }
 
   init_main();
-  init_sound();
+  init_sound(1);
 
   init_input();
 

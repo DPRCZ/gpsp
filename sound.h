@@ -124,7 +124,7 @@ void sound_timer_queue32(u32 channel, u32 value);
 void sound_timer(fixed8_24 frequency_step, u32 channel);
 void sound_reset_fifo(u32 channel);
 void update_gbc_sound(u32 cpu_ticks);
-void init_sound();
+void init_sound(int need_reset);
 void sound_write_mem_savestate(file_tag_type savestate_file);
 void sound_read_savestate(file_tag_type savestate_file);
 

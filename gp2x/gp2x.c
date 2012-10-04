@@ -19,7 +19,7 @@
 */
 
 
-#define _GNU_SOURCE
+#define _GNU_SOURCE 1
 #include "../common.h"
 #include <sys/mman.h>
 #include <sys/ioctl.h>
@@ -27,13 +27,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <linux/input.h>
 #include "gp2x.h"
 #include "pollux_dpc_set.h"
 
 static u32 gpsp_gp2x_dev_audio;
 static u32 gpsp_gp2x_dev;
-#ifdef WIZ_BUILD
-static u32 gpsp_gp2x_gpiodev;
+#ifdef POLLUX_BUILD
+static u32 gpsp_gp2x_indev;
+static u32 saved_405c, saved_4060, saved_4058;
 #endif
 
 static u32 gp2x_audio_volume = 74/2;
@@ -55,10 +57,17 @@ u32 button_plat_mask_to_config[PLAT_BUTTON_COUNT] =
   GP2X_B,
   GP2X_X,
   GP2X_Y,
+#if defined(POLLUX_BUILD) && !defined(WIZ_BUILD)
+  0,
+  0,
+  GP2X_PUSH,
+  GP2X_HOME,
+#else
   GP2X_VOL_DOWN,
   GP2X_VOL_UP,
   GP2X_PUSH,
   GP2X_VOL_MIDDLE
+#endif
 };
 
 u32 gamepad_config_map[PLAT_BUTTON_COUNT] =
@@ -78,10 +87,10 @@ u32 gamepad_config_map[PLAT_BUTTON_COUNT] =
   BUTTON_ID_VOLDOWN,            // Vol down
   BUTTON_ID_VOLUP,              // Vol up
   BUTTON_ID_FPS,                // Push
-  BUTTON_ID_MENU                // Vol middle
+  BUTTON_ID_MENU                // Vol middle / Home
 };
 
-#ifdef WIZ_BUILD
+#ifdef POLLUX_BUILD
 #include <linux/fb.h>
 void *gpsp_gp2x_screen;
 #define fb_buf_count 4
@@ -94,6 +103,7 @@ static int fbdev;
 static void fb_video_init()
 {
   struct fb_fix_screeninfo fbfix;
+  unsigned int r;
   int i, ret;
 
   fbdev = open("/dev/fb0", O_RDWR);
@@ -131,14 +141,32 @@ static void fb_video_init()
   fb_work_buf = 0;
   fb_buf_use = fb_buf_count;
 
+  saved_405c = gpsp_gp2x_memregl[0x405c>>2];
+  saved_4060 = gpsp_gp2x_memregl[0x4060>>2];
+  saved_4058 = gpsp_gp2x_memregl[0x4058>>2];
+
+  // set mode; program both MLCs so that TV-out works
+  gpsp_gp2x_memregl[0x405c>>2] = gpsp_gp2x_memregl[0x445c>>2] = 2;
+  gpsp_gp2x_memregl[0x4060>>2] = gpsp_gp2x_memregl[0x4460>>2] = 320 * 2;
+
+  r = gpsp_gp2x_memregl[0x4058>>2];
+  r = (r & 0xffff) | (0x4432 << 16) | 0x10;
+  gpsp_gp2x_memregl[0x4058>>2] = r;
+
+  r = gpsp_gp2x_memregl[0x4458>>2];
+  r = (r & 0xffff) | (0x4432 << 16) | 0x10;
+  gpsp_gp2x_memregl[0x4458>>2] = r;
+
   pollux_video_flip();
   warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
 }
 
 void pollux_video_flip()
 {
-  gpsp_gp2x_memregl[0x406C>>2] = fb_paddr[fb_work_buf];
+  gpsp_gp2x_memregl[0x406C>>2] =
+  gpsp_gp2x_memregl[0x446C>>2] = fb_paddr[fb_work_buf];
   gpsp_gp2x_memregl[0x4058>>2] |= 0x10;
+  gpsp_gp2x_memregl[0x4458>>2] |= 0x10;
   fb_work_buf++;
   if (fb_work_buf >= fb_buf_use)
     fb_work_buf = 0;
@@ -157,6 +185,8 @@ void fb_use_buffers(int count)
 
 void wiz_lcd_set_portrait(int y)
 {
+  char *dpc_settings;
+#ifdef WIZ_BUILD
   static int old_y = -1;
   int cmd[2] = { 0, 0 };
 
@@ -169,14 +199,20 @@ void wiz_lcd_set_portrait(int y)
   old_y = y;
 
   /* the above ioctl resets LCD timings, so set them here */
-  pollux_dpc_set(gpsp_gp2x_memregs, getenv("pollux_dpc_set"));
+#endif
+
+  dpc_settings = getenv("pollux_dpc_set");
+  if (dpc_settings != NULL)
+    pollux_dpc_set(gpsp_gp2x_memregs, dpc_settings);
 }
 
 static void fb_video_exit()
 {
   /* switch to default fb mem, turn portrait off */
-  gpsp_gp2x_memregl[0x406C>>2] = fb_paddr[0];
-  gpsp_gp2x_memregl[0x4058>>2] |= 0x10;
+  gpsp_gp2x_memregl[0x406c>>2] = fb_paddr[0];
+  gpsp_gp2x_memregl[0x405c>>2] = saved_405c;
+  gpsp_gp2x_memregl[0x4060>>2] = saved_4060;
+  gpsp_gp2x_memregl[0x4058>>2] = saved_4058 | 0x10;
   wiz_lcd_set_portrait(0);
   close(fbdev);
 }
@@ -242,21 +278,94 @@ u32 wiz_load_gamepak(char *name)
   return ret;
 }
 
-#endif
+#define KEYBITS_BIT(x) (keybits[(x)/sizeof(keybits[0])/8] & \
+  (1 << ((x) & (sizeof(keybits[0])*8-1))))
+
+static int abs_min, abs_max, lzone_step;
+
+static int open_caanoo_pad(void)
+{
+  long keybits[KEY_CNT / sizeof(long) / 8];
+  long absbits[(ABS_MAX+1) / sizeof(long) / 8];
+  struct input_absinfo ainfo;
+  int fd = -1, i;
+
+  memset(keybits, 0, sizeof(keybits));
+  memset(absbits, 0, sizeof(absbits));
+
+  for (i = 0;; i++)
+  {
+    int support = 0, need;
+    int ret;
+    char name[64];
+
+    snprintf(name, sizeof(name), "/dev/input/event%d", i);
+    fd = open(name, O_RDONLY|O_NONBLOCK);
+    if (fd == -1)
+      break;
+
+    /* check supported events */
+    ret = ioctl(fd, EVIOCGBIT(0, sizeof(support)), &support);
+    if (ret == -1) {
+      printf("in_evdev: ioctl failed on %s\n", name);
+      goto skip;
+    }
+
+    need = (1 << EV_KEY) | (1 << EV_ABS);
+    if ((support & need) != need)
+      goto skip;
+
+    ret = ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits);
+    if (ret == -1) {
+      printf("in_evdev: ioctl failed on %s\n", name);
+      goto skip;
+    }
+
+    if (!KEYBITS_BIT(BTN_JOYSTICK))
+      goto skip;
+
+    ret = ioctl(fd, EVIOCGABS(ABS_X), &ainfo);
+    if (ret == -1)
+      goto skip;
+
+    abs_min = ainfo.minimum;
+    abs_max = ainfo.maximum;
+    lzone_step = (abs_max - abs_min) / 2 / 9;
+
+    ioctl(fd, EVIOCGNAME(sizeof(name)), name);
+    printf("using \"%s\" (type %08x)\n", name, support);
+    break;
+
+skip:
+    close(fd);
+    fd = -1;
+  }
+
+  if (fd == -1) {
+    printf("missing input device\n");
+    exit(1);
+  }
+
+  return fd;
+}
+#endif // POLLUX_BUILD
 
 void gpsp_plat_init(void)
 {
-  char buff[256];
-
   gpsp_gp2x_dev = open("/dev/mem",   O_RDWR);
   gpsp_gp2x_dev_audio = open("/dev/mixer", O_RDWR);
   gpsp_gp2x_memregl = (u32 *)mmap(0, 0x10000, PROT_READ|PROT_WRITE, MAP_SHARED,
    gpsp_gp2x_dev, 0xc0000000);
   gpsp_gp2x_memregs = (u16 *)gpsp_gp2x_memregl;
   warm_init();
+#ifdef POLLUX_BUILD
 #ifdef WIZ_BUILD
-  gpsp_gp2x_gpiodev = open("/dev/GPIO", O_RDONLY);
+  gpsp_gp2x_indev = open("/dev/GPIO", O_RDONLY);
+#else
+  gpsp_gp2x_indev = open_caanoo_pad();
+#endif
   fb_video_init();
+  (void)open_caanoo_pad;
 #endif
 
   gp2x_sound_volume(1);
@@ -264,16 +373,13 @@ void gpsp_plat_init(void)
 
 void gpsp_plat_quit(void)
 {
-  char buff1[256], buff2[256];
-
-  getcwd(buff1, sizeof(buff1));
   chdir(main_path);
 
   warm_finish();
-#ifdef WIZ_BUILD
-  close(gpsp_gp2x_gpiodev);
-  fb_video_exit();
+#ifdef POLLUX_BUILD
   wiz_gamepak_cleanup();
+  close(gpsp_gp2x_indev);
+  fb_video_exit();
 #endif
   munmap((void *)gpsp_gp2x_memregl, 0x10000);
   close(gpsp_gp2x_dev_audio);
@@ -302,7 +408,7 @@ u32 gpsp_plat_joystick_read(void)
 {
 #ifdef WIZ_BUILD
   u32 value = 0;
-  read(gpsp_gp2x_gpiodev, &value, 4);
+  read(gpsp_gp2x_indev, &value, 4);
   if(value & 0x02)
    value |= 0x05;
   if(value & 0x08)
@@ -312,7 +418,47 @@ u32 gpsp_plat_joystick_read(void)
   if(value & 0x80)
    value |= 0x41;
   return value;
+#elif defined(POLLUX_BUILD)
+  // caanoo
+  static const int evdev_to_gp2x[] = {
+    GP2X_A, GP2X_X, GP2X_B, GP2X_Y, GP2X_L, GP2X_R,
+    GP2X_HOME, 0, GP2X_START, GP2X_SELECT, GP2X_PUSH
+  };
+  int keybits[KEY_CNT / sizeof(int)];
+  struct input_absinfo ainfo;
+  int lzone = analog_sensitivity_level * lzone_step;
+  u32 retval = 0;
+  int i, ret;
+
+  ret = ioctl(gpsp_gp2x_indev, EVIOCGKEY(sizeof(keybits)), keybits);
+  if (ret == -1) {
+    perror("EVIOCGKEY ioctl failed");
+    sleep(1);
+    return 0;
+  }
+
+  for (i = 0; i < sizeof(evdev_to_gp2x) / sizeof(evdev_to_gp2x[0]); i++) {
+    if (KEYBITS_BIT(BTN_TRIGGER + i))
+      retval |= evdev_to_gp2x[i];
+  }
+
+  if (lzone != 0)
+    lzone--;
+
+  ret = ioctl(gpsp_gp2x_indev, EVIOCGABS(ABS_X), &ainfo);
+  if (ret != -1) {
+    if      (ainfo.value <= abs_min + lzone) retval |= GP2X_LEFT;
+    else if (ainfo.value >= abs_max - lzone) retval |= GP2X_RIGHT;
+  }
+  ret = ioctl(gpsp_gp2x_indev, EVIOCGABS(ABS_Y), &ainfo);
+  if (ret != -1) {
+    if      (ainfo.value <= abs_min + lzone) retval |= GP2X_UP;
+    else if (ainfo.value >= abs_max - lzone) retval |= GP2X_DOWN;
+  }
+
+  return retval;
 #else
+  // GP2X
   u32 value = (gpsp_gp2x_memregs[0x1198 >> 1] & 0x00FF);
 
   if(value == 0xFD)
@@ -368,18 +514,24 @@ void set_FCLK(u32 MHZ)
 {
   u32 v;
   u32 mdiv, pdiv, sdiv = 0;
-#ifdef WIZ_BUILD
+#ifdef POLLUX_BUILD
+  int i;
   #define SYS_CLK_FREQ 27
   // m = MDIV, p = PDIV, s = SDIV
   pdiv = 9;
   mdiv = (MHZ * pdiv) / SYS_CLK_FREQ;
-  mdiv &= 0x3ff;
+  if (mdiv & ~0x3ff)
+    return;
   v = (pdiv<<18) | (mdiv<<8) | sdiv;
 
   gpsp_gp2x_memregl[0xf004>>2] = v;
   gpsp_gp2x_memregl[0xf07c>>2] |= 0x8000;
-  while (gpsp_gp2x_memregl[0xf07c>>2] & 0x8000)
+  for (i = 0; (gpsp_gp2x_memregl[0xf07c>>2] & 0x8000) && i < 0x100000; i++)
     ;
+
+  // must restart sound as it's PLL is shared with CPU one
+  sound_exit();
+  init_sound(0);
 #else
   #define SYS_CLK_FREQ 7372800
   // m = MDIV + 8, p = PDIV + 2, s = SDIV

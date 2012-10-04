@@ -4,17 +4,22 @@
 
 # Global definitions
 
-PREFIX    ?= /opt/open2x/gcc-4.1.1-glibc-2.3.6
-CC        = $(PREFIX)/bin/arm-open2x-linux-gcc
-STRIP     = $(PREFIX)/bin/arm-open2x-linux-strip
+CC        = $(CROSS_COMPILE)gcc
 
 OBJS      = main.o cpu.o memory.u video.o input.o sound.o gp2x.o gui.o        \
             cheats.o zip.o cpu_threaded.z arm_stub.o video_blend.o            \
             warm.o upscale_aspect.o
 ifeq ($(WIZ),1)
+POLLUX    = 1
 OBJS      += pollux_dpc_set.o
 BIN       = gpsp_wiz
-else
+endif
+ifeq ($(CAANOO),1)
+POLLUX    = 1
+OBJS      += pollux_dpc_set.o
+BIN       = gpsp_caanoo
+endif
+ifeq ($(BIN),)
 BIN       = gpsp_gp2x
 endif
 
@@ -27,14 +32,18 @@ CFLAGS     += -DARM_ARCH -DGP2X_BUILD
 ifeq ($(WIZ),1)
 CFLAGS     += -DWIZ_BUILD
 endif
-# NOTE: -funroll-loops will slow down compiling considerably
-CFLAGS     += -O3 -std=c99 -msoft-float -funsigned-char -fno-common           \
-              -fno-builtin -Wall                                              \
+ifeq ($(POLLUX),1)
+CFLAGS     += -DPOLLUX_BUILD
+endif
+CFLAGS     += -std=c99 -msoft-float -funsigned-char -Wall -ggdb
+ifndef DEBUG
+CFLAGS     += -O2
+endif
 
-INCLUDES   = `$(PREFIX)/bin/sdl-config --cflags` -I$(PREFIX)/include
-LIBS       = `$(PREFIX)/bin/sdl-config --libs`               \
+INCLUDES   = `sdl-config --cflags`
+LIBS       = `sdl-config --libs` \
               -lm -ldl -lpthread -lz
-ifneq ($(WIZ),1)
+ifeq ($(WIZ)$(CAANOO),)
 LIBS       += -static
 endif
 
@@ -63,7 +72,6 @@ cpu.o cpu_threaded.z: CFLAGS += -Wno-unused-variable -Wno-unused-label
 
 $(BIN):	$(OBJS)
 	$(CC) $(OBJS) $(LIBS) -o $(BIN)
-	$(STRIP) $(BIN)
 
 clean:
 	rm -f *.o *.u *.z $(BIN) 

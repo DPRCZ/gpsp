@@ -260,6 +260,7 @@ int main(int argc, char *argv[])
     gui_action_type gui_action = CURSOR_NONE;
 
     debug_screen_start();
+    debug_screen_printl("                                                  ");
     debug_screen_printl("Sorry, but gpSP requires a Gameboy Advance BIOS   ");
     debug_screen_printl("image to run correctly. Make sure to get an       ");
     debug_screen_printl("authentic one, it'll be exactly 16384 bytes large ");

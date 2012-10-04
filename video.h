@@ -79,7 +79,7 @@ typedef enum
 {
   unscaled,
   scaled_aspect,
-#ifdef WIZ_BUILD
+#ifdef POLLUX_BUILD
   unscaled_rot,
   scaled_aspect_rot,
 #elif defined(GP2X_BUILD)

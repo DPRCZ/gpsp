@@ -78,7 +78,7 @@
     clock_speed = (clock_speed_number + 1) * 33
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed / 33) - 1
-#elif defined(WIZ_BUILD)
+#elif defined(POLLUX_BUILD)
   static const char *clock_speed_options[] =
   {
     "300MHz", "333MHz", "366MHz", "400MHz", "433MHz",
@@ -735,7 +735,7 @@ u32 gamepad_config_line_to_button[] =
 #ifdef GP2X_BUILD
 
 u32 gamepad_config_line_to_button[] =
- { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 14 };
+ { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 14, 15 };
 
 #endif
 
@@ -753,6 +753,8 @@ static const char *scale_options[] =
 #elif defined(WIZ_BUILD)
   "unscaled 3:2", "scaled 3:2 (slower)",
   "unscaled 3:2 (anti-tear)", "scaled 3:2 (anti-tear)"
+#elif defined(POLLUX_BUILD)
+  "unscaled 3:2", "scaled 3:2 (slower)"
 #elif defined(PND_BUILD)
   "unscaled", "2x", "3x", "fullscreen"
 #elif defined(GP2X_BUILD)
@@ -807,7 +809,7 @@ s32 load_game_config_file()
       random_skip = file_options[2] % 2;
       clock_speed = file_options[3];
 
-#ifdef WIZ_BUILD
+#ifdef POLLUX_BUILD
       if(clock_speed > 900)
         clock_speed = 533;
 #elif defined(GP2X_BUILD)
@@ -843,7 +845,7 @@ s32 load_game_config_file()
 
   current_frameskip_type = auto_frameskip;
   frameskip_value = 4;
-#ifdef WIZ_BUILD
+#ifdef POLLUX_BUILD
   frameskip_value = 1;
 #endif
   random_skip = 0;
@@ -1531,18 +1533,25 @@ u32 menu(u16 *original_screen)
     gamepad_config_option("Right Trigger", 9),
 #ifdef WIZ_BUILD
     gamepad_config_option("Menu         ", 10),
-#else
-    gamepad_config_option("Start        ", 10),
-#endif
     gamepad_config_option("Select       ", 11),
-#if !defined(WIZ_BUILD) && !defined(PND_BUILD)
-    gamepad_config_option("Stick Push   ", 12),
-#endif
-#ifdef PND_BUILD
+#elif defined(POLLUX_BUILD)
+    gamepad_config_option("I            ", 10),
+    gamepad_config_option("II           ", 11),
+    gamepad_config_option("Push         ", 12),
+    gamepad_config_option("Home         ", 13),
+#elif defined(PND_BUILD)
+    gamepad_config_option("Start        ", 10),
+    gamepad_config_option("Select       ", 11),
     gamepad_config_option("1            ", 12),
     gamepad_config_option("2            ", 13),
     gamepad_config_option("3            ", 14),
     gamepad_config_option("4            ", 15),
+#else // GP2X
+    gamepad_config_option("Start        ", 10),
+    gamepad_config_option("Select       ", 11),
+    gamepad_config_option("Stick Push   ", 12),
+#endif
+#ifdef PND_BUILD
     submenu_option(NULL, "Back", "Return to the main menu.", 16)
 #else
     submenu_option(NULL, "Back", "Return to the main menu.", 14)
@@ -1552,6 +1561,12 @@ u32 menu(u16 *original_screen)
 
   menu_option_type analog_config_options[] =
   {
+#if defined(POLLUX_BUILD)
+    numeric_selection_option(NULL, "Analog sensitivity",
+     &analog_sensitivity_level, 10,
+     "Determine sensitivity/responsiveness of the analog input.\n"
+     "Lower numbers are less sensitive.", 8),
+#endif
     submenu_option(NULL, "Back", "Return to the main menu.", 11)
   };
 
@@ -1596,9 +1611,9 @@ u32 menu(u16 *original_screen)
     submenu_option(&gamepad_config_menu, "Configure gamepad input",
      "Select to change the in-game behavior of buttons\n"
      "and d-pad.", 6),
-#ifndef GP2X_BUILD
+#ifndef WIZ_BUILD
     submenu_option(&analog_config_menu, "Configure analog input",
-     "Select to change the in-game behavior of the PSP analog nub.", 7),
+     "Select to change the in-game behavior of the analog nub.", 7),
 #endif
     submenu_option(&cheats_misc_menu, "Cheats and Miscellaneous options",
      "Select to manage cheats, set backup behavior,\n"

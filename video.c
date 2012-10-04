@@ -86,12 +86,14 @@ static void Ge_Finish_Callback(int id, void *arg)
 #define get_screen_pitch()                                                    \
   screen_pitch                                                                \
 
-#elif defined(WIZ_BUILD)
+#elif defined(POLLUX_BUILD)
 
 static u16 rot_buffer[240*4];
 static u32 rot_lines_total = 4;
 static u32 rot_line_count = 0;
+#ifdef WIZ_BUILD
 static char rot_msg_buff[64];
+#endif
 
 static u32 screen_offset = 0;
 static u16 *screen_pixels = NULL;
@@ -3356,7 +3358,7 @@ void flip_screen()
   }
 }
 
-#elif defined(WIZ_BUILD)
+#elif defined(POLLUX_BUILD)
 
 void flip_screen()
 {
@@ -3602,7 +3604,7 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
-#elif defined(WIZ_BUILD) || defined(PND_BUILD)
+#elif defined(POLLUX_BUILD) || defined(PND_BUILD)
 
 void init_video()
 {
@@ -3737,7 +3739,7 @@ void clear_screen(u16 color)
   sceGuSync(0, 0); */
 }
 
-#elif defined(WIZ_BUILD)
+#elif defined(POLLUX_BUILD)
 
 void video_resolution_large()
 {

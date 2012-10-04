@@ -7,8 +7,8 @@ enum
   GP2X_LEFT     = 1 << 2,
   GP2X_DOWN     = 1 << 4,
   GP2X_RIGHT    = 1 << 6,
-  GP2X_START    = 1 << 8,
-  GP2X_SELECT   = 1 << 9,
+  GP2X_START    = 1 << 8,  // Wiz: Menu, Caanoo: I
+  GP2X_SELECT   = 1 << 9,  // Caanoo: II
   GP2X_L        = 1 << 10,
   GP2X_R        = 1 << 11,
   GP2X_A        = 1 << 12,
@@ -19,6 +19,11 @@ enum
   GP2X_VOL_UP   = 1 << 16,
   GP2X_VOL_DOWN = 1 << 17,
   GP2X_PUSH     = 1 << 18,
+#elif defined(POLLUX_BUILD)
+  GP2X_HOME     = 1 << 16,
+  GP2X_PUSH     = 1 << 17,
+  GP2X_VOL_UP   = 1 << 30, // dummy
+  GP2X_VOL_DOWN = 1 << 29,
 #else
   GP2X_VOL_DOWN = 1 << 22,
   GP2X_VOL_UP   = 1 << 23,

@@ -25,7 +25,7 @@
 #define GBA_XTAL      16777216.0f
 #define GBA_60HZ_RATE 16853760.0f /* 228*(272+960)*60 */
 
-#if !defined(PSP_BUILD) && !defined(WIZ_BUILD)
+#if !defined(PSP_BUILD) && !defined(POLLUX_BUILD)
   // run GBA at 60Hz (~0.5% faster) to better match host display
   #define GBC_BASE_RATE GBA_60HZ_RATE
 #else

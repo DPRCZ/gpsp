@@ -1,3 +1,40 @@
+-- porter's foreword --
+
+Even though ZX-81 ported my Wiz version to Caanoo, some people kept
+asking me to do the port instead because of apparent sound problems,
+so here it is. Note that I did not use ZX-81's work for this release,
+because I had various changes for Pandora version and wanted to have
+them in, so different set of bugs then in ZX-81's version are
+possible. Savestates might also be incompatible.
+
+To use this, you'll first need to copy authentic GBA BIOS to gpSP
+directory. It must be named gba_bios.bin and should be 16kB in size.
+
+I've appended the original gpSP GP2X readme file as it contains lots
+of information that is still relevant for this version, as well as
+development history of this project.
+
+- notaz
+
+Changelog:
+
+0.9-2xb u8
+- Caanoo port
+- fixed tv-out for pandora
+- integrated M-HT's neon scalers (pandora only)
+- merged an assortment of calc84maniac's bugfixes
+
+0.9-2xb u7
+- Pandora port, using hardware scaler for video output.
+- Fixed a few portablility issues in ARM asm and sound code.
+- Tweaked timing to suit pandora's LCD refresh nicely.
+- Maybe fixed GBC/digital sound channel desync over time.
+- Some other not-that-relevant cleanups and tweaks.
+
+Source code should be available at:
+http://notaz.gp2x.de/cgi-bin/gitweb.cgi
+
+
 -- gameplaySP2X  Gameboy Advance emulator for GP2X --
 
 gpSP2X is a version of my (Exophase)'s emulator originally for Sony PSP.

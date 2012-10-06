@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# if you know good LCD settings, set them here
+# export pollux_dpc_set='lcd_timings=397,1,37,277,341,0,17,337;clkdiv0=9'
+
+./gpsp_caanoo "$@"
+
+cd /usr/gp2x
+exec ./gp2xmenu

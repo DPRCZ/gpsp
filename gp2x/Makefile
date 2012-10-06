@@ -76,3 +76,12 @@ $(BIN):	$(OBJS)
 clean:
 	rm -f *.o *.u *.z $(BIN) 
 
+rel: gpsp_caanoo gpsp_caanoo.ini gpsp_caanoo.gpe warm_2.6.24.ko \
+		../COPYING.DOC ../readme.txt readme_gp2x.txt ../game_config.txt
+	rm -rf out
+	mkdir -p out/gpsp_caanoo
+	cp $^ out/gpsp_caanoo/
+	mv out/gpsp_caanoo/gpsp_caanoo.ini out/
+	mv out/gpsp_caanoo/readme_gp2x.txt out/gpsp_caanoo/readme_caanoo.txt
+	echo -n '/mnt/sd' > out/gpsp_caanoo/romdir.txt
+	cd out && zip -9 -r ../gpsp_caanoo.zip *

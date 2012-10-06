@@ -32,6 +32,8 @@ static SDL_cond *sound_cv;
 
 #ifdef PSP_BUILD
 u32 audio_buffer_size_number = 1;
+#elif defined(POLLUX_BUILD)
+u32 audio_buffer_size_number = 7;
 #else
 u32 audio_buffer_size_number = 8;
 #endif

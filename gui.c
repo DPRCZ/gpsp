@@ -552,7 +552,7 @@ typedef enum
   NUMBER_SELECTION_OPTION = 0x01,
   STRING_SELECTION_OPTION = 0x02,
   SUBMENU_OPTION          = 0x04,
-  ACTION_OPTION           = 0x08
+  ACTION_OPTION           = 0x08,
 } menu_option_type_enum;
 
 struct _menu_type
@@ -746,6 +746,13 @@ u32 gamepad_config_line_to_button[] =
 
 #endif
 
+#ifdef RPI_BUILD
+
+u32 gamepad_config_line_to_button[] =
+ { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 12, 13, 14, 15 };
+
+#endif
+
 static const char *scale_options[] =
 {
 #ifdef PSP_BUILD
@@ -759,6 +766,8 @@ static const char *scale_options[] =
   "unscaled", "2x", "3x", "fullscreen"
 #elif defined(GP2X_BUILD)
   "unscaled 3:2", "scaled 3:2", "fullscreen", "scaled 3:2 (software)"
+#elif defined(RPI_BUILD)
+  "fullscreen"
 #else
   "unscaled 3:2"
 #endif
@@ -843,10 +852,15 @@ s32 load_game_config_file()
   if(file_loaded)
     return 0;
 
+#ifdef RPI_BUILD
+  current_frameskip_type = manual_frameskip;
+  frameskip_value = 1;
+#else
   current_frameskip_type = auto_frameskip;
   frameskip_value = 4;
 #ifdef POLLUX_BUILD
   frameskip_value = 1;
+#endif
 #endif
   random_skip = 0;
   clock_speed = default_clock_speed;
@@ -1213,10 +1227,6 @@ u32 menu(u16 *original_screen)
        reg[CHANGED_PC_STATUS] = 1;
        menu_update_clock();
     }
-    else
-    {
-      choose_menu(current_menu);
-    }
   }
 
   void menu_restart()
@@ -1329,8 +1339,9 @@ u32 menu(u16 *original_screen)
   static const char *update_backup_options[] = { "Exit only", "Automatic" };
 
   // Marker for help information, don't go past this mark (except \n)------*
-  menu_option_type graphics_sound_options[] =
-  {
+  menu_option_type graphics_sound_options[] = 
+ {
+#ifndef RPI_BUILD
     string_selection_option(NULL, "Display scaling", scale_options,
      (u32 *)(&screen_scale),
      sizeof(scale_options) / sizeof(scale_options[0]),
@@ -1344,6 +1355,8 @@ u32 menu(u16 *original_screen)
 #endif
 #endif
      "", 2),
+#endif
+
 #ifndef GP2X_BUILD
     string_selection_option(NULL, "Screen filtering", yes_no_options,
      (u32 *)(&screen_filter), 2,
@@ -1352,7 +1365,7 @@ u32 menu(u16 *original_screen)
      "smooth image, at the cost of being blurry and having less vibrant\n"
      "colors.", 3),
 #endif
-#ifdef PND_BUILD
+#if defined (PND_BUILD)
     string_selection_option(NULL, "Scaling filter", filter2_options,
      (u32 *)(&screen_filter2),
      sizeof(filter2_options) / sizeof(filter2_options[0]),
@@ -1572,7 +1585,7 @@ u32 menu(u16 *original_screen)
 
 #endif
 
-#ifdef PC_BUILD
+#if defined(PC_BUILD) || defined(RPI_BUILD)
 
   menu_option_type gamepad_config_options[] =
   {
@@ -1801,6 +1814,10 @@ u32 menu(u16 *original_screen)
 
         if(current_option->option_type & SUBMENU_OPTION)
           choose_menu(current_option->sub_menu);
+
+        if(current_menu == &main_menu)
+           choose_menu(&main_menu);
+
         break;
 
       default:

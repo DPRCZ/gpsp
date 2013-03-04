@@ -38,8 +38,14 @@ debug_state current_debug_state = RUN;
 
 //u32 breakpoint_value = 0;
 
+#ifdef RPI_BUILD
+frameskip_type current_frameskip_type = manual_frameskip; //manual; //auto_frameskip;
+u32 global_cycles_per_instruction = 1;
+#else
 frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
+#endif
+
 u32 random_skip = 0;
 u32 fps_debug = 0;
 
@@ -821,7 +827,7 @@ void synchronize()
   }
   else if (synchronize_flag)
   {
-#if defined(PND_BUILD)
+#if defined(PND_BUILD) || defined(RPI_BUILD)
     fb_wait_vsync();
 #elif !defined(GP2X_BUILD) // sleeping on GP2X is a bad idea
     delay_us((u64)virtual_frame_count * 50000 / 3 - new_ticks + 2);
@@ -867,7 +873,7 @@ void synchronize()
 
   interval_skipped_frames += skip_next_frame;
 
-#if !defined(GP2X_BUILD) && !defined(PND_BUILD)
+#if !defined(GP2X_BUILD) && !defined(PND_BUILD) && !defined(RPI_BUILD)
   char char_buffer[64];
   sprintf(char_buffer, "gpSP: %2d (%2d) fps", fps, frames_drawn);
   SDL_WM_SetCaption(char_buffer, "gpSP");

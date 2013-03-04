@@ -270,4 +270,8 @@ typedef u32 fixed8_24;
   #include "pandora/pnd.h"
 #endif
 
+#ifdef RPI_BUILD
+  #include "raspberrypi/rpi.h"
+#endif
+
 #endif

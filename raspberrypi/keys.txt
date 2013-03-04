@@ -1,0 +1,33 @@
+gpsp raspberry pi 
+
+CONTROL KEYS
+============
+KEYBOARD
+---------
+Up		Up Arrow
+Down		Down Arrow
+Left		Left Arrow
+Right		Right Arrow
+A		Z
+B		X
+Start		Enter
+Select		Backspace
+L		A
+R		S
+
+Exit 		Esc
+Menu		F10
+
+GAMEPAD
+-------
+Up		XAsix -
+Down		XAsix +
+Left		YAsix -
+Right		YAsix +
+A		Button 1
+B		Button 2
+Start		Button 3
+Select		Button 4
+L		Button 5
+R		Button 6
+

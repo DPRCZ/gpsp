@@ -25,7 +25,11 @@ u32 global_enable_audio = 1;
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
 
+#ifdef RPI_BUILD
+u32 sound_frequency = 22050;
+#else
 u32 sound_frequency = 44100;
+#endif
 
 SDL_mutex *sound_mutex;
 static SDL_cond *sound_cv;

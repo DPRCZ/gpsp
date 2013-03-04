@@ -105,7 +105,7 @@ const u32 screen_pitch = 320;
 #define get_screen_pitch()                                                    \
   screen_pitch                                                                \
 
-#elif defined(PND_BUILD)
+#elif defined(PND_BUILD) || defined(RPI_BUILD)
 
 static u16 *screen_pixels = NULL;
 
@@ -3388,7 +3388,7 @@ no_clean:
   screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
 }
 
-#elif defined(PND_BUILD)
+#elif defined(PND_BUILD) || defined(RPI_BUILD)
 
 void flip_screen()
 {
@@ -3604,7 +3604,7 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
-#elif defined(POLLUX_BUILD) || defined(PND_BUILD)
+#elif defined(WIZ_BUILD) || defined(PND_BUILD) || defined (RPI_BUILD)
 
 void init_video()
 {
@@ -3800,14 +3800,18 @@ void clear_screen(u16 color)
     *p++ = col;
 }
 
-#elif defined(PND_BUILD)
+#elif defined(PND_BUILD) || defined(RPI_BUILD)
 
 void video_resolution_large()
 {
+#if defined (RPI_BUILD)
+  resolution_width = 480;
+#else
   resolution_width = 400;
+#endif
   resolution_height = 272;
 
-  fb_set_mode(400, 272, 1, 15, screen_filter, screen_filter2);
+  fb_set_mode(resolution_width, resolution_height, 1, 15, screen_filter, screen_filter2);
   flip_screen();
   clear_screen(0);
 }
@@ -3817,7 +3821,7 @@ void video_resolution_small()
   resolution_width = 240;
   resolution_height = 160;
 
-  fb_set_mode(240, 160, 3, screen_scale, screen_filter, screen_filter2);
+  fb_set_mode(resolution_width, resolution_height, 3, screen_scale, screen_filter, screen_filter2);
   flip_screen();
   clear_screen(0);
 }

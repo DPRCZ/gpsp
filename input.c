@@ -555,8 +555,49 @@ void init_input()
 #endif
 
 
+#if defined(RPI_BUILD)
 
-#ifdef PC_BUILD
+u32 key_map(SDLKey key_sym)
+{
+  switch(key_sym)
+  {
+    case SDLK_a:
+      return BUTTON_L;
+
+    case SDLK_s:
+      return BUTTON_R;
+
+    case SDLK_DOWN:
+      return BUTTON_DOWN;
+
+    case SDLK_UP:
+      return BUTTON_UP;
+
+    case SDLK_LEFT:
+      return BUTTON_LEFT;
+
+    case SDLK_RIGHT:
+      return BUTTON_RIGHT;
+
+    case SDLK_RETURN:
+      return BUTTON_START;
+
+    case SDLK_BACKSPACE:
+      return BUTTON_SELECT;
+
+    case SDLK_x:
+      return BUTTON_B;
+
+    case SDLK_z:
+      return BUTTON_A;
+
+    default:
+      return BUTTON_NONE;
+  }
+}
+#endif
+
+#if defined(PC_BUILD)
 
 u32 key_map(SDLKey key_sym)
 {
@@ -596,6 +637,8 @@ u32 key_map(SDLKey key_sym)
       return BUTTON_NONE;
   }
 }
+#endif
+#if defined(PC_BUILD) || defined(RPI_BUILD)
 
 u32 joy_map(u32 button)
 {
@@ -607,16 +650,16 @@ u32 joy_map(u32 button)
     case 5:
       return BUTTON_R;
 
-    case 9:
+    case 2:
       return BUTTON_START;
 
-    case 8:
+    case 3:
       return BUTTON_SELECT;
 
-    case 0:
+    case 1:
       return BUTTON_B;
 
-    case 1:
+    case 0:
       return BUTTON_A;
 
     default:
@@ -632,7 +675,7 @@ gui_action_type get_gui_input()
   delay_us(30000);
 
   while(SDL_PollEvent(&event))
-  {
+  { 
     switch(event.type)
     {
       case SDL_QUIT:
@@ -669,15 +712,49 @@ gui_action_type get_gui_input()
           case SDLK_BACKSPACE:
             gui_action = CURSOR_BACK;
             break;
-
-          default:
-            break;
-        }
-        break;
+	 default:
+	    break;
       }
     }
-  }
+    break;
+#ifdef RPI_BUILD
+    case SDL_JOYBUTTONDOWN:
+    {
+      switch (event.jbutton.button)
+      {
+	case 2:
+            gui_action = CURSOR_BACK;
+            break;
 
+	case 1:
+            gui_action = CURSOR_EXIT;
+            break;
+
+	case 0:
+	    gui_action = CURSOR_SELECT;
+    	    break;
+	}
+     }
+     break;
+
+     case SDL_JOYAXISMOTION:
+     {
+         if (event.jaxis.axis==0) { //Left-Right
+            if (event.jaxis.value < -3200) gui_action = CURSOR_LEFT;
+        	else if (event.jaxis.value > 3200) gui_action = CURSOR_RIGHT;
+         }
+         if (event.jaxis.axis==1) {  //Up-Down
+            if (event.jaxis.value < -3200) gui_action = CURSOR_UP;
+        	else if (event.jaxis.value > 3200) gui_action = CURSOR_DOWN;
+         }
+    }
+    break;
+
+#endif
+    default:
+        break;
+    }
+  }
   return gui_action;
 }
 
@@ -698,8 +775,11 @@ u32 update_input()
         {
           quit();
         }
-
+#ifdef PC_BUILD
         if(event.key.keysym.sym == SDLK_BACKSPACE)
+#else
+        if(event.key.keysym.sym == SDLK_F10)
+#endif
         {
           u16 *screen_copy = copy_screen();
           u32 ret_val = menu(screen_copy);
@@ -708,7 +788,7 @@ u32 update_input()
           return ret_val;
         }
         else
-
+#ifdef PC_BUILD
         if(event.key.keysym.sym == SDLK_F1)
         {
           debug_on();
@@ -741,7 +821,7 @@ u32 update_input()
           dump_translation_cache();
         }
         else
-
+#endif
         if(event.key.keysym.sym == SDLK_F5)
         {
           char current_savestate_filename[512];
@@ -794,6 +874,22 @@ u32 update_input()
       {
         key &= ~(joy_map(event.jbutton.button));
         break;
+      }
+#ifdef RPI_BUILD
+      case SDL_JOYAXISMOTION:
+      {
+         if (event.jaxis.axis==0) { //Left-Right
+            key &= ~(BUTTON_LEFT|BUTTON_RIGHT);
+         if (event.jaxis.value < -3200)  key |= BUTTON_LEFT;
+           else if (event.jaxis.value > 3200)  key |= BUTTON_RIGHT;
+       } 
+         if (event.jaxis.axis==1) {  //Up-Down
+            key &= ~(BUTTON_UP|BUTTON_DOWN);
+         if (event.jaxis.value < -3200)  key |= BUTTON_UP;
+           else if (event.jaxis.value > 3200)  key |= BUTTON_DOWN;
+       }
+       break;
+#endif
       }
     }
   }

@@ -2,6 +2,7 @@ void gpsp_plat_init(void);
 void gpsp_plat_quit(void);
 
 #define PLAT_BUTTON_COUNT 17
+#define PLAT_MENU_BUTTON -1 // have one hardcoded
 extern u32 button_plat_mask_to_config[PLAT_BUTTON_COUNT];
 
 void *fb_flip_screen(void);

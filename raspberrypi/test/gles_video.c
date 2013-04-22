@@ -1,3 +1,27 @@
+/*
+
+This file is based on Portable ZX-Spectrum emulator.
+Copyright (C) 2001-2012 SMT, Dexus, Alone Coder, deathsoft, djdron, scor
+	
+C++ to C code conversion by Pate
+
+Modified by DPR for gpsp for Raspberry Pi
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include "bcm_host.h"
 #include "GLES/gl.h"
 #include "EGL/egl.h"
@@ -34,13 +58,21 @@ static const char* fragment_shader =
 	"{														\n"
 	"	gl_FragColor = texture2D(u_texture, v_texcoord);	\n"
 	"}														\n";
-
+/*
 static const GLfloat vertices[] =
 {
 	-0.5f, -0.5f, 0.0f,
 	+0.5f, -0.5f, 0.0f,
 	+0.5f, +0.5f, 0.0f,
 	-0.5f, +0.5f, 0.0f,
+};
+*/
+static const GLfloat vertices[] =
+{
+	-0.5f, -0.5f, 0.0f,
+	-0.5f, +0.5f, 0.0f,
+	+0.5f, +0.5f, 0.0f,
+	+0.5f, -0.5f, 0.0f,
 };
 
 #define	TEX_WIDTH	1024
@@ -210,6 +242,16 @@ static GLfloat proj[4][4];
 static GLint filter_min;
 static GLint filter_mag;
 
+void video_set_filter(uint32_t filter) {
+	if (filter==0) {
+	    filter_min = GL_NEAREST;
+	    filter_mag = GL_NEAREST;
+	} else  {
+	    filter_min = GL_LINEAR;
+	    filter_mag = GL_LINEAR;
+	}
+}
+
 void video_init(uint32_t _width, uint32_t _height, uint32_t filter)
 {
 	if ((_width==0)||(_height==0))
@@ -218,7 +260,7 @@ void video_init(uint32_t _width, uint32_t _height, uint32_t filter)
 	frame_width = _width;
 	frame_height = _height;
 	
-	bcm_host_init();
+	//bcm_host_init();
 
 	// get an EGL display connection
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -274,7 +316,7 @@ void video_init(uint32_t _width, uint32_t _height, uint32_t filter)
 	DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0);
 	DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
 	DISPMANX_ELEMENT_HANDLE_T dispman_element = vc_dispmanx_element_add(dispman_update, dispman_display,
-	  0, &dst_rect, 0, &src_rect, DISPMANX_PROTECTION_NONE, NULL, NULL, DISPMANX_NO_ROTATE);
+	 1, &dst_rect, 0, &src_rect, DISPMANX_PROTECTION_NONE, NULL, NULL, DISPMANX_NO_ROTATE);
 
 	nativewindow.element = dispman_element;
 	nativewindow.width = screen_width;
@@ -293,21 +335,14 @@ void video_init(uint32_t _width, uint32_t _height, uint32_t filter)
 	int r=(screen_height*10/frame_height);
 	int h = (frame_height*r)/10;
 	int w = (frame_width*r)/10;
-
+	if (w>screen_width) {
+	    r = (screen_width*10/frame_width);
+	    h = (frame_height*r)/10;
+	    w = (frame_width*r)/10;
+	}
 	glViewport((screen_width-w)/2, (screen_height-h)/2, w, h);
 	SetOrtho(proj, -0.5f, +0.5f, +0.5f, -0.5f, -1.0f, 1.0f, 1.0f ,1.0f );
-	if (filter==0) {
-	    filter_min = GL_NEAREST;
-	    filter_mag = GL_NEAREST;
-	} else if (filter==1) {
-	    filter_min = GL_LINEAR_MIPMAP_LINEAR;
-	    filter_mag = GL_LINEAR;
-	} else if (filter==2) {
-	    filter_min = GL_LINEAR_MIPMAP_NEAREST;
-	    filter_mag = GL_LINEAR;
-
-	}
-
+	video_set_filter(filter);
 }
 
 static void gles2_destroy()
@@ -344,9 +379,8 @@ static void gles2_Draw( uint16_t *pixels)
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame_width, frame_height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, pixels);
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(shader.u_texture, 0);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);

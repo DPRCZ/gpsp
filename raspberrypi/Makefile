@@ -20,6 +20,7 @@ CFLAGS     += -DARM_ARCH -DRPI_BUILD -Wall
 CFLAGS     += -O3 -mfpu=vfp
 CFLAGS     += `sdl-config --cflags`
 CFLAGS     += -I$(SDKSTAGE)/opt/vc/include -I$(SDKSTAGE)/opt/vc/include/interface/vcos/pthreads
+CFLAGS     += -I/opt/vc/include/interface/vmcs_host/linux
 
 # expecting to have PATH set up to get correct sdl-config first
 

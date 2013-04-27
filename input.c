@@ -882,7 +882,7 @@ u32 update_input()
             key &= ~(BUTTON_LEFT|BUTTON_RIGHT);
          if (event.jaxis.value < -3200)  key |= BUTTON_LEFT;
            else if (event.jaxis.value > 3200)  key |= BUTTON_RIGHT;
-       } 
+       }
          if (event.jaxis.axis==1) {  //Up-Down
             key &= ~(BUTTON_UP|BUTTON_DOWN);
          if (event.jaxis.value < -3200)  key |= BUTTON_UP;
@@ -893,6 +893,16 @@ u32 update_input()
       }
     }
   }
+#ifdef RPI_BUILD
+  if (key == (BUTTON_SELECT|BUTTON_R)) {
+      key &= ~(BUTTON_SELECT|BUTTON_R);
+      u16 *screen_copy = copy_screen();
+      u32 ret_val = menu(screen_copy);
+      free(screen_copy);
+
+      return ret_val;
+  }
+#endif
 
   io_registers[REG_P1] = (~key) & 0x3FF;
 

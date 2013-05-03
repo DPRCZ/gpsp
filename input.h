@@ -75,6 +75,10 @@ typedef enum
   CURSOR_NONE
 } gui_action_type;
 
+#ifdef RPI_BUILD
+extern u32 menu_hotkey;
+#endif
+
 void init_input();
 u32 update_input();
 gui_action_type get_gui_input();
@@ -83,6 +87,7 @@ void input_write_mem_savestate(file_tag_type savestate_file);
 void input_read_savestate(file_tag_type savestate_file);
 
 extern u32 gamepad_config_map[];
+extern u32 keyboard_config_map[];
 extern u32 global_enable_analog;
 extern u32 analog_sensitivity_level;
 

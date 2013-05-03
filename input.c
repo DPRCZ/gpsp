@@ -555,49 +555,7 @@ void init_input()
 #endif
 
 
-#if defined(RPI_BUILD)
-
-u32 key_map(SDLKey key_sym)
-{
-  switch(key_sym)
-  {
-    case SDLK_a:
-      return BUTTON_L;
-
-    case SDLK_s:
-      return BUTTON_R;
-
-    case SDLK_DOWN:
-      return BUTTON_DOWN;
-
-    case SDLK_UP:
-      return BUTTON_UP;
-
-    case SDLK_LEFT:
-      return BUTTON_LEFT;
-
-    case SDLK_RIGHT:
-      return BUTTON_RIGHT;
-
-    case SDLK_RETURN:
-      return BUTTON_START;
-
-    case SDLK_BACKSPACE:
-      return BUTTON_SELECT;
-
-    case SDLK_x:
-      return BUTTON_B;
-
-    case SDLK_z:
-      return BUTTON_A;
-
-    default:
-      return BUTTON_NONE;
-  }
-}
-#endif
-
-#if defined(PC_BUILD)
+#ifdef PC_BUILD
 
 u32 key_map(SDLKey key_sym)
 {
@@ -637,8 +595,6 @@ u32 key_map(SDLKey key_sym)
       return BUTTON_NONE;
   }
 }
-#endif
-#if defined(PC_BUILD) || defined(RPI_BUILD)
 
 u32 joy_map(u32 button)
 {
@@ -650,16 +606,16 @@ u32 joy_map(u32 button)
     case 5:
       return BUTTON_R;
 
-    case 2:
+    case 9:
       return BUTTON_START;
 
-    case 3:
+    case 8:
       return BUTTON_SELECT;
 
-    case 1:
+    case 0:
       return BUTTON_B;
 
-    case 0:
+    case 1:
       return BUTTON_A;
 
     default:
@@ -675,7 +631,7 @@ gui_action_type get_gui_input()
   delay_us(30000);
 
   while(SDL_PollEvent(&event))
-  { 
+  {
     switch(event.type)
     {
       case SDL_QUIT:
@@ -712,49 +668,15 @@ gui_action_type get_gui_input()
           case SDLK_BACKSPACE:
             gui_action = CURSOR_BACK;
             break;
-	 default:
-	    break;
+
+          default:
+            break;
+        }
+        break;
       }
     }
-    break;
-#ifdef RPI_BUILD
-    case SDL_JOYBUTTONDOWN:
-    {
-      switch (event.jbutton.button)
-      {
-	case 2:
-            gui_action = CURSOR_BACK;
-            break;
-
-	case 1:
-            gui_action = CURSOR_EXIT;
-            break;
-
-	case 0:
-	    gui_action = CURSOR_SELECT;
-    	    break;
-	}
-     }
-     break;
-
-     case SDL_JOYAXISMOTION:
-     {
-         if (event.jaxis.axis==0) { //Left-Right
-            if (event.jaxis.value < -3200) gui_action = CURSOR_LEFT;
-        	else if (event.jaxis.value > 3200) gui_action = CURSOR_RIGHT;
-         }
-         if (event.jaxis.axis==1) {  //Up-Down
-            if (event.jaxis.value < -3200) gui_action = CURSOR_UP;
-        	else if (event.jaxis.value > 3200) gui_action = CURSOR_DOWN;
-         }
-    }
-    break;
-
-#endif
-    default:
-        break;
-    }
   }
+
   return gui_action;
 }
 
@@ -775,11 +697,8 @@ u32 update_input()
         {
           quit();
         }
-#ifdef PC_BUILD
+
         if(event.key.keysym.sym == SDLK_BACKSPACE)
-#else
-        if(event.key.keysym.sym == SDLK_F10)
-#endif
         {
           u16 *screen_copy = copy_screen();
           u32 ret_val = menu(screen_copy);
@@ -788,7 +707,7 @@ u32 update_input()
           return ret_val;
         }
         else
-#ifdef PC_BUILD
+
         if(event.key.keysym.sym == SDLK_F1)
         {
           debug_on();
@@ -821,7 +740,7 @@ u32 update_input()
           dump_translation_cache();
         }
         else
-#endif
+
         if(event.key.keysym.sym == SDLK_F5)
         {
           char current_savestate_filename[512];
@@ -875,34 +794,8 @@ u32 update_input()
         key &= ~(joy_map(event.jbutton.button));
         break;
       }
-#ifdef RPI_BUILD
-      case SDL_JOYAXISMOTION:
-      {
-         if (event.jaxis.axis==0) { //Left-Right
-            key &= ~(BUTTON_LEFT|BUTTON_RIGHT);
-         if (event.jaxis.value < -3200)  key |= BUTTON_LEFT;
-           else if (event.jaxis.value > 3200)  key |= BUTTON_RIGHT;
-       }
-         if (event.jaxis.axis==1) {  //Up-Down
-            key &= ~(BUTTON_UP|BUTTON_DOWN);
-         if (event.jaxis.value < -3200)  key |= BUTTON_UP;
-           else if (event.jaxis.value > 3200)  key |= BUTTON_DOWN;
-       }
-       break;
-#endif
-      }
     }
   }
-#ifdef RPI_BUILD
-  if (key == (BUTTON_SELECT|BUTTON_R)) {
-      key &= ~(BUTTON_SELECT|BUTTON_R);
-      u16 *screen_copy = copy_screen();
-      u32 ret_val = menu(screen_copy);
-      free(screen_copy);
-
-      return ret_val;
-  }
-#endif
 
   io_registers[REG_P1] = (~key) & 0x3FF;
 
@@ -910,6 +803,226 @@ u32 update_input()
 }
 
 void init_input()
+{
+  u32 joystick_count = SDL_NumJoysticks();
+
+  if(joystick_count > 0)
+  {
+    SDL_JoystickOpen(0);
+    SDL_JoystickEventState(SDL_ENABLE);
+  }
+}
+#endif
+
+#ifdef RPI_BUILD
+u32 menu_hotkey = 1;
+
+gui_action_type get_gui_input()
+{
+   SDL_Event event;
+   gui_action_type gui_action = CURSOR_NONE;
+   int action = BUTTON_NONE;
+
+   delay_us(30000);
+
+   while(SDL_PollEvent(&event)) {
+      switch(event.type) {
+         case SDL_QUIT:
+           quit();
+
+         case SDL_KEYDOWN:
+            if (event.key.keysym.sym == SDLK_ESCAPE) {
+               action = BUTTON_B;
+            } else {
+               action = key_map(event.key.keysym.sym);
+            }
+         break;
+
+         case SDL_JOYBUTTONDOWN:
+            action = joy_map(event.jbutton.button+JOY_BUTTON_1);
+         break;
+
+         case SDL_JOYAXISMOTION: {
+            if (event.jaxis.axis==0) { //Left-Right
+               if (event.jaxis.value < -TRESHOLD) action = joy_map(JOY_ASIX_XM);
+                  else if (event.jaxis.value > TRESHOLD) action = joy_map(JOY_ASIX_XP);
+            }
+            if (event.jaxis.axis==1) {  //Up-Down
+               if (event.jaxis.value < -TRESHOLD) action = joy_map(JOY_ASIX_YM);
+                  else if (event.jaxis.value > TRESHOLD) action = joy_map(JOY_ASIX_YP);
+            }
+        }
+        default:
+           break;
+     }
+  }
+
+  switch (action) {
+     case BUTTON_UP:
+        gui_action = CURSOR_UP;
+     break;
+
+     case BUTTON_DOWN:
+        gui_action = CURSOR_DOWN;
+     break;
+
+     case BUTTON_LEFT:
+        gui_action = CURSOR_LEFT;
+     break;
+
+     case BUTTON_RIGHT:
+        gui_action = CURSOR_RIGHT;
+    break;
+
+    case BUTTON_START:
+    case BUTTON_A:
+       gui_action = CURSOR_SELECT;
+    break;
+
+    case BUTTON_SELECT:
+    case BUTTON_B:
+       gui_action = CURSOR_EXIT;
+    break;
+
+    default:
+    break;
+  }
+
+  return gui_action;
+}
+
+u32 update_input()
+{
+  SDL_Event event;
+  int newkey;
+
+  newkey = key;
+
+  while(SDL_PollEvent(&event))
+  {
+    switch(event.type)
+    {
+      case SDL_QUIT:
+        quit();
+
+      case SDL_KEYDOWN:
+      {
+        if(event.key.keysym.sym == SDLK_ESCAPE)
+        {
+          quit();
+        }
+        if(event.key.keysym.sym == SDLK_F10)
+        {
+          u16 *screen_copy = copy_screen();
+          u32 ret_val = menu(screen_copy);
+          free(screen_copy);
+
+          return ret_val;
+        }
+        else
+        if(event.key.keysym.sym == SDLK_F5)
+        {
+          char current_savestate_filename[512];
+          u16 *current_screen = copy_screen();
+          get_savestate_filename_noshot(savestate_slot,
+           current_savestate_filename);
+          save_state(current_savestate_filename, current_screen);
+          free(current_screen);
+        }
+        else
+
+        if(event.key.keysym.sym == SDLK_F7)
+        {
+          char current_savestate_filename[512];
+          get_savestate_filename_noshot(savestate_slot,
+           current_savestate_filename);
+          load_state(current_savestate_filename);
+          debug_on();
+          return 1;
+        }
+        else
+
+        if(event.key.keysym.sym == SDLK_BACKQUOTE)
+        {
+          synchronize_flag ^= 1;
+        }
+        else
+        {
+          newkey |= key_map(event.key.keysym.sym);
+        }
+
+        break;
+      }
+
+      case SDL_KEYUP:
+      {
+        newkey &= ~(key_map(event.key.keysym.sym));
+        break;
+      }
+
+      case SDL_JOYBUTTONDOWN:
+      {
+        newkey |= joy_map(event.jbutton.button+JOY_BUTTON_1);
+        break;
+      }
+
+      case SDL_JOYBUTTONUP:
+      {
+        newkey &= ~(joy_map(event.jbutton.button+JOY_BUTTON_1));
+        break;
+      }
+
+      case SDL_JOYAXISMOTION:
+      {
+         if (event.jaxis.axis==0) { //Left-Right
+            if (event.jaxis.value < -TRESHOLD) {
+               newkey |= joy_map(JOY_ASIX_XM);
+               newkey &= ~(joy_map(JOY_ASIX_XP));
+            } else if (event.jaxis.value > TRESHOLD) {
+               newkey &= ~(joy_map(JOY_ASIX_XM));
+               newkey |= joy_map(JOY_ASIX_XP);
+            }else {
+               newkey &= ~(joy_map(JOY_ASIX_XM));
+               newkey &= ~(joy_map(JOY_ASIX_XP));
+            }
+        }
+
+        if (event.jaxis.axis==1) {  //Up-Down
+            if (event.jaxis.value < -TRESHOLD)  {
+               newkey |= joy_map(JOY_ASIX_YM);
+               newkey &= ~(joy_map(JOY_ASIX_YP));
+            } else if (event.jaxis.value > TRESHOLD) {
+               newkey &= ~(joy_map(JOY_ASIX_YM));
+               newkey |= joy_map(JOY_ASIX_YP);
+            } else {
+               newkey &= ~(joy_map(JOY_ASIX_YM));
+               newkey &= ~(joy_map(JOY_ASIX_YP));
+            }
+         }
+      break;
+      }
+    }
+  }
+
+  if ((menu_hotkey) && ( newkey == (BUTTON_SELECT | BUTTON_R))) {
+      newkey &= ~(BUTTON_SELECT | BUTTON_R);
+
+      u16 *screen_copy = copy_screen();
+      u32 ret_val = menu(screen_copy);
+      free(screen_copy);
+
+      return ret_val;
+  }
+
+  if (key != newkey) {
+     key = newkey;
+     trigger_key(key);
+     io_registers[REG_P1] = (~key) & 0x3FF;
+  }
+  return 0;
+}
+
+void  init_input()
 {
   u32 joystick_count = SDL_NumJoysticks();
 

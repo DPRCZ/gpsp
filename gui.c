@@ -28,6 +28,10 @@
 
 #endif
 
+#ifdef RPI_BUILD
+//#include "input.h"
+#endif
+
 #define MAX_PATH 1024
 
 // Blatantly stolen and trimmed from MZX (megazeux.sourceforge.net)
@@ -299,9 +303,12 @@ s32 load_file(const char **wildcards, char *result)
       flip_screen();
 
       print_string(current_dir_short, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 0);
-#ifdef GP2X_BUILD
+#if defined GP2X_BUILD
       print_string("Press X to return to the main menu.",
        COLOR_HELP_TEXT, COLOR_BG, 20, 220);
+#elif defined RPI_BUILD
+      print_string("Press B or Select to return to the main menu.",
+       COLOR_HELP_TEXT, COLOR_BG, 20, 260);
 #else
       print_string("Press X to return to the main menu.",
        COLOR_HELP_TEXT, COLOR_BG, 20, 260);
@@ -396,7 +403,7 @@ s32 load_file(const char **wildcards, char *result)
           if (current_column != 0)
             break;
           clear_screen(COLOR_BG);
-	  current_file_selection += FILE_LIST_ROWS;
+          current_file_selection += FILE_LIST_ROWS;
           if (current_file_selection > num_files - 1)
             current_file_selection = num_files - 1;
           current_file_scroll_value = current_file_selection - FILE_LIST_ROWS / 2;
@@ -461,7 +468,7 @@ s32 load_file(const char **wildcards, char *result)
           if (current_column != 0)
             break;
           clear_screen(COLOR_BG);
-	  current_file_selection -= FILE_LIST_ROWS;
+          current_file_selection -= FILE_LIST_ROWS;
           if (current_file_selection < 0)
             current_file_selection = 0;
           current_file_scroll_value = current_file_selection - FILE_LIST_ROWS / 2;
@@ -553,6 +560,8 @@ typedef enum
   STRING_SELECTION_OPTION = 0x02,
   SUBMENU_OPTION          = 0x04,
   ACTION_OPTION           = 0x08,
+  JOY_SELECTION_OPTION    = 0x10,
+  KEY_SELECTION_OPTION    = 0x20
 } menu_option_type_enum;
 
 struct _menu_type
@@ -589,6 +598,38 @@ typedef struct _menu_type menu_type;
     sizeof(name##_options) / sizeof(menu_option_type)                         \
   }                                                                           \
 
+#ifdef RPI_BUILD
+
+#define gamepad_config_option(display_string, number)                         \
+{                                                                             \
+  menu_get_joy,                                                               \
+  NULL,                                                                       \
+  NULL,                                                                       \
+  display_string ": %s",                                                      \
+  usb_gamepad_config_buttons,                                                 \
+  gamepad_config_map + number,                                                \
+  0,                                                                          \
+  gamepad_help[number],                                                       \
+  number,                                                                     \
+  JOY_SELECTION_OPTION                                                        \
+}                                                                             \
+
+#define keyboard_config_option(display_string, number)                        \
+{                                                                             \
+  menu_get_kbd,                                                               \
+  NULL,                                                                       \
+  NULL,                                                                       \
+  display_string ": %s",                                                      \
+  NULL,                                                                       \
+  keyboard_config_map + number,                                               \
+  0,                                                                          \
+  gamepad_help[number],                                                       \
+  number,                                                                     \
+  KEY_SELECTION_OPTION                                                        \
+}                                                                             \
+
+#else
+
 #define gamepad_config_option(display_string, number)                         \
 {                                                                             \
   NULL,                                                                       \
@@ -603,6 +644,8 @@ typedef struct _menu_type menu_type;
   number,                                                                     \
   STRING_SELECTION_OPTION                                                     \
 }                                                                             \
+
+#endif
 
 #define analog_config_option(display_string, number)                          \
 {                                                                             \
@@ -746,13 +789,6 @@ u32 gamepad_config_line_to_button[] =
 
 #endif
 
-#ifdef RPI_BUILD
-
-u32 gamepad_config_line_to_button[] =
- { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 12, 13, 14, 15 };
-
-#endif
-
 static const char *scale_options[] =
 {
 #ifdef PSP_BUILD
@@ -883,13 +919,20 @@ enum file_options {
   fo_global_enable_analog,
   fo_analog_sensitivity_level,
   fo_screen_filter2,
+#ifdef RPI_BUILD
+  fo_menu_hotkey,
+#endif
   fo_main_option_count,
 };
 
 #ifdef PC_BUILD
 #define PLAT_BUTTON_COUNT 0
 #endif
+#ifdef RPI_BUILD
+#define FILE_OPTION_COUNT (fo_main_option_count + PLAT_BUTTON_COUNT + PLAT_KEY_COUNT)
+#else
 #define FILE_OPTION_COUNT (fo_main_option_count + PLAT_BUTTON_COUNT)
+#endif
 
 s32 load_config_file()
 {
@@ -927,10 +970,24 @@ s32 load_config_file()
     scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
 #endif
 
+#ifndef PC_BUILD
+#ifdef RPI_BUILD
+      menu_hotkey = file_options[fo_menu_hotkey] % 2;
+
+      u32 i;
+
+      for(i = 0; i < PLAT_BUTTON_COUNT; i++) {
+         gamepad_config_map[i] = file_options[fo_main_option_count + i];
+      }
+
+      for(i = 0; i < PLAT_KEY_COUNT; i++) {
+         keyboard_config_map[i] = file_options[fo_main_option_count + PLAT_BUTTON_COUNT + i];
+      }
+#else
+
       // Sanity check: Make sure there's a MENU or FRAMESKIP
       // key, if not assign to triangle
 
-#ifndef PC_BUILD
       u32 i;
       s32 menu_button = -1;
       for(i = 0; i < PLAT_BUTTON_COUNT; i++)
@@ -948,6 +1005,7 @@ s32 load_config_file()
       {
         gamepad_config_map[PLAT_MENU_BUTTON] = BUTTON_ID_MENU;
       }
+#endif
 #endif
 
       file_close(config_file);
@@ -1016,11 +1074,23 @@ s32 save_config_file()
     file_options[fo_screen_filter2] = screen_filter2;
 
 #ifndef PC_BUILD
-    u32 i;
-    for(i = 0; i < PLAT_BUTTON_COUNT; i++)
-    {
-      file_options[fo_main_option_count + i] = gamepad_config_map[i];
-    }
+#ifdef RPI_BUILD
+    file_options[fo_menu_hotkey] = menu_hotkey;
+      u32 i;
+
+      for(i = 0; i < PLAT_BUTTON_COUNT; i++) {
+         file_options[fo_main_option_count + i] = gamepad_config_map[i] ;
+      }
+
+      for(i = 0; i < PLAT_KEY_COUNT; i++) {
+         file_options[fo_main_option_count + PLAT_BUTTON_COUNT + i] = keyboard_config_map[i];
+      }
+#else
+     u32 i;
+     for(i = 0; i < PLAT_BUTTON_COUNT; i++) {
+       file_options[fo_main_option_count + i] = gamepad_config_map[i];
+     }
+#endif
 #endif
 
     file_write_array(config_file, file_options);
@@ -1184,6 +1254,32 @@ u32 menu(u16 *original_screen)
     "DISPLAY FPS",
     "NOTHING"
   };
+
+#ifdef RPI_BUILD
+  static const char *usb_gamepad_config_buttons[] =
+  {
+    "Asix Y-",
+    "Asix Y+",
+    "Asix X-",
+    "Asix X+",
+    "Button 1",
+    "Button 2",
+    "Button 3",
+    "Button 4",
+    "Button 5",
+    "Button 6",
+    "Butoon 7",
+    "Button 8",
+    "Button 9",
+    "Button 10",
+    "Button 11",
+    "Button 12",
+    "Button 13",
+    "Button 14",
+    "Button 15",
+    "Button 16"
+  };
+#endif
 #endif
 
   void menu_update_clock()
@@ -1282,15 +1378,59 @@ u32 menu(u16 *original_screen)
     }
   }
 
+  void menu_get_joy()
+  {
+    const char help_string[] = { "Choose asix or button on the gamepad or press ESC to exit." };
+
+    int Tmp;
+    print_string(help_string, COLOR_HELP_TEXT,COLOR_BG, 8, 210);
+
+    sprintf(line_buffer,current_option->display_string,"   ???");
+    print_string_pad(line_buffer, COLOR_ACTIVE_ITEM, COLOR_BG, 6,
+        (current_option->line_number * 10) + 40, 36);
+
+    flip_screen();
+    Tmp=get_joystick();
+    if (Tmp>=0) *(current_option->current_option)=Tmp;
+
+    clear_help();
+    print_string(current_option->help_string, COLOR_HELP_TEXT,COLOR_BG, 8, 210);
+    flip_screen();
+
+  }
+
+  void menu_get_kbd()
+  {
+    const char help_string[] = { "Choose key on the keyboard or press ESC to exit." };
+
+    int Tmp;
+    print_string(help_string, COLOR_HELP_TEXT,COLOR_BG, 8, 210);
+
+    sprintf(line_buffer,current_option->display_string,"   ???");
+    print_string_pad(line_buffer, COLOR_ACTIVE_ITEM, COLOR_BG, 6,
+        (current_option->line_number * 10) + 40, 36);
+
+    flip_screen();
+    Tmp=get_keyboard();
+    if (Tmp>=0) *(current_option->current_option)=Tmp;
+
+    clear_help();
+    print_string(current_option->help_string, COLOR_HELP_TEXT,COLOR_BG, 8, 210);
+    flip_screen();
+
+  }
+
+#ifndef RPI_BUILD
   void menu_fix_gamepad_help()
   {
 #ifndef PC_BUILD
     clear_help();
     current_option->help_string =
-     gamepad_help[gamepad_config_map[
-     gamepad_config_line_to_button[current_option_num]]];
+      gamepad_help[gamepad_config_map[
+      gamepad_config_line_to_button[current_option_num]]];
 #endif
   }
+#endif
 
   void submenu_graphics_sound()
   {
@@ -1303,6 +1443,11 @@ u32 menu(u16 *original_screen)
   }
 
   void submenu_gamepad()
+  {
+
+  }
+
+  void submenu_keyboard()
   {
 
   }
@@ -1339,7 +1484,7 @@ u32 menu(u16 *original_screen)
   static const char *update_backup_options[] = { "Exit only", "Automatic" };
 
   // Marker for help information, don't go past this mark (except \n)------*
-  menu_option_type graphics_sound_options[] = 
+  menu_option_type graphics_sound_options[] =
  {
 #ifndef RPI_BUILD
     string_selection_option(NULL, "Display scaling", scale_options,
@@ -1585,7 +1730,7 @@ u32 menu(u16 *original_screen)
 
 #endif
 
-#if defined(PC_BUILD) || defined(RPI_BUILD)
+#if defined(PC_BUILD)
 
   menu_option_type gamepad_config_options[] =
   {
@@ -1599,8 +1744,52 @@ u32 menu(u16 *original_screen)
 
 #endif
 
+#if defined(RPI_BUILD)
+
+  menu_option_type gamepad_config_options[] =
+  {
+    gamepad_config_option("D-pad up     ", 0),
+    gamepad_config_option("D-pad down   ", 1),
+    gamepad_config_option("D-pad left   ", 2),
+    gamepad_config_option("D-pad right  ", 3),
+    gamepad_config_option("A            ", 4),
+    gamepad_config_option("B            ", 5),
+    gamepad_config_option("Left Trigger ", 6),
+    gamepad_config_option("Right Trigger", 7),
+    gamepad_config_option("Start        ", 8),
+    gamepad_config_option("Select       ", 9),
+
+    string_selection_option(NULL, "Menu hotkey  ", yes_no_options,
+     &menu_hotkey, 2,
+     "Select 'yes' to open Menu by pressing buttons\nSelect + Right Trigger.", 11),
+
+    submenu_option(NULL, "Back", "Return to the main menu.", 13)
+  };
+
+  menu_option_type keyboard_config_options[] =
+  {
+    keyboard_config_option("D-pad up     ", 0),
+    keyboard_config_option("D-pad down   ", 1),
+    keyboard_config_option("D-pad left   ", 2),
+    keyboard_config_option("D-pad right  ", 3),
+    keyboard_config_option("A            ", 4),
+    keyboard_config_option("B            ", 5),
+    keyboard_config_option("Left Trigger ", 6),
+    keyboard_config_option("Right Trigger", 7),
+    keyboard_config_option("Start        ", 8),
+    keyboard_config_option("Select       ", 9),
+
+    submenu_option(NULL, "Back", "Return to the main menu.", 11)
+  };
+
+#endif
+
   make_menu(gamepad_config, submenu_gamepad, NULL);
+#ifdef RPI_BUILD
+  make_menu(keyboard_config, submenu_keyboard, NULL);
+#else
   make_menu(analog_config, submenu_analog, NULL);
+#endif
 
   menu_option_type main_options[] =
   {
@@ -1625,8 +1814,13 @@ u32 menu(u16 *original_screen)
      "Select to change the in-game behavior of buttons\n"
      "and d-pad.", 6),
 #ifndef WIZ_BUILD
+#ifdef RPI_BUILD
+    submenu_option(&keyboard_config_menu, "Configure keyboard input",
+     "Select to change the in-game behavior of the keyboard.", 7),
+#else
     submenu_option(&analog_config_menu, "Configure analog input",
      "Select to change the in-game behavior of the analog nub.", 7),
+#endif
 #endif
     submenu_option(&cheats_misc_menu, "Cheats and Miscellaneous options",
      "Select to manage cheats, set backup behavior,\n"
@@ -1714,30 +1908,31 @@ u32 menu(u16 *original_screen)
 
     for(i = 0; i < current_menu->num_options; i++, display_option++)
     {
-      if(display_option->option_type & NUMBER_SELECTION_OPTION)
-      {
+      if(display_option->option_type & NUMBER_SELECTION_OPTION) {
         sprintf(line_buffer, display_option->display_string,
          *(display_option->current_option));
-      }
-      else
-
-      if(display_option->option_type & STRING_SELECTION_OPTION)
-      {
+      }  else if(display_option->option_type & STRING_SELECTION_OPTION) {
         sprintf(line_buffer, display_option->display_string,
          ((u32 *)display_option->options)[*(display_option->current_option)]);
       }
-      else
-      {
+#ifdef RPI_BUILD
+        else if(display_option->option_type & JOY_SELECTION_OPTION) {
+        sprintf(line_buffer, display_option->display_string,
+         ((u32 *)display_option->options)[*(display_option->current_option)]);
+      } else if(display_option->option_type & KEY_SELECTION_OPTION) {
+        sprintf(line_buffer, display_option->display_string,
+         SDL_GetKeyName(*(display_option->current_option)));
+        line_buffer[15] = toupper(line_buffer[15]);
+      }
+#endif
+        else {
         strcpy(line_buffer, display_option->display_string);
       }
 
-      if(display_option == current_option)
-      {
+      if(display_option == current_option) {
         print_string_pad(line_buffer, COLOR_ACTIVE_ITEM, COLOR_BG, 6,
          (display_option->line_number * 10) + 40, 36);
-      }
-      else
-      {
+      } else {
         print_string_pad(line_buffer, COLOR_INACTIVE_ITEM, COLOR_BG, 6,
          (display_option->line_number * 10) + 40, 36);
       }
@@ -1809,11 +2004,17 @@ u32 menu(u16 *original_screen)
         break;
 
       case CURSOR_SELECT:
-        if(current_option->option_type & ACTION_OPTION)
+        if(current_option->option_type & ACTION_OPTION) {
           current_option->action_function();
-
-        if(current_option->option_type & SUBMENU_OPTION)
+#ifdef RPI_BUILD
+        } else if(current_option->option_type & JOY_SELECTION_OPTION) {
+          current_option->action_function();
+        } else if(current_option->option_type & KEY_SELECTION_OPTION) {
+          current_option->action_function();
+#endif
+        }else  if(current_option->option_type & SUBMENU_OPTION) {
           choose_menu(current_option->sub_menu);
+        }
 
         if(current_menu == &main_menu)
            choose_menu(&main_menu);

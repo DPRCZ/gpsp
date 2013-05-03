@@ -2,18 +2,15 @@
 # Global definitions
 
 CC        = gcc
-
-OBJS      = gles_video.o test.o
-
+OBJS      = ../gles_video.o test.o
 BIN       = glestest
 
 # Platform specific definitions 
-
-CFLAGS+=-D_LINUX
-
-LIBS +=-L$(SDKSTAGE)/opt/vc/lib/ -lGLESv2 -lEGL -lopenmaxil -lbcm_host -lvcos -lvchiq_arm -lpthread -lrt 
-
-INCLUDES+=-I$(SDKSTAGE)/opt/vc/include -I$(SDKSTAGE)/opt/vc/include/interface/vcos/pthreads
+VPATH     += ../
+CFLAGS    +=  -D_LINUX
+LIBS      += -L$(SDKSTAGE)/opt/vc/lib/ -lGLESv2 -lEGL -lopenmaxil -lbcm_host -lvcos -lvchiq_arm -lpthread -lrt 
+INCLUDES  += -I$(SDKSTAGE)/opt/vc/include -I$(SDKSTAGE)/opt/vc/include/interface/vcos/pthreads
+INCLUDES  += -I$(SDKSTAGE)/opt/vc/include/interface/vmcs_host/linux
 
 # Compilation:
 

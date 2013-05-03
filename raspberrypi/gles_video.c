@@ -1,26 +1,26 @@
 /*
-
-This file is based on Portable ZX-Spectrum emulator.
-Copyright (C) 2001-2012 SMT, Dexus, Alone Coder, deathsoft, djdron, scor
-	
-C++ to C code conversion by Pate
-
-Modified by DPR for gpsp for Raspberry Pi
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+ * 
+ * This file is based on Portable ZX-Spectrum emulator.
+ * Copyright (C) 2001-2012 SMT, Dexus, Alone Coder, deathsoft, djdron, scor
+ *	
+ * C++ to C code conversion by Pate
+ * 
+ * Modified by DPR for gpsp for Raspberry Pi
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
 
 #include "bcm_host.h"
 #include "GLES/gl.h"
@@ -58,15 +58,7 @@ static const char* fragment_shader =
 	"{														\n"
 	"	gl_FragColor = texture2D(u_texture, v_texcoord);	\n"
 	"}														\n";
-/*
-static const GLfloat vertices[] =
-{
-	-0.5f, -0.5f, 0.0f,
-	+0.5f, -0.5f, 0.0f,
-	+0.5f, +0.5f, 0.0f,
-	-0.5f, +0.5f, 0.0f,
-};
-*/
+
 static const GLfloat vertices[] =
 {
 	-0.5f, -0.5f, 0.0f,
@@ -259,8 +251,6 @@ void video_init(uint32_t _width, uint32_t _height, uint32_t filter)
 
 	frame_width = _width;
 	frame_height = _height;
-	
-	//bcm_host_init();
 
 	// get an EGL display connection
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -364,7 +354,6 @@ static void SetOrtho(GLfloat m[4][4], GLfloat left, GLfloat right, GLfloat botto
 	m[3][2] = -(far + near)/(far - near);
 	m[3][3] = 1;
 }
-#define RGB15(r, g, b)  (((r) << (5+6)) | ((g) << 6) | (b))
 
 static void gles2_Draw( uint16_t *pixels)
 {
@@ -375,7 +364,7 @@ static void gles2_Draw( uint16_t *pixels)
 
 	glUseProgram(shader.program);
 
-        glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame_width, frame_height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, pixels);
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(shader.u_texture, 0);
@@ -397,13 +386,11 @@ static void gles2_Draw( uint16_t *pixels)
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	//glFlush();
 }
 
 void video_close()
 {
 	gles2_destroy();
-	// Release OpenGL resources
 	eglMakeCurrent( display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT );
 	eglDestroySurface( display, surface );
 	eglDestroyContext( display, context );

@@ -64,7 +64,7 @@ static uint16_t * video_buff;
 
 void gpsp_plat_init(void)
 {
-  int ret, w, h, fd;
+  int ret;
   //const char *layer_fb_name;
   SDL_Surface* myVideoSurface;
 

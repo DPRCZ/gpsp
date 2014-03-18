@@ -1,7 +1,7 @@
 # gpSP makefile
 # Gilead Kutnick - Exophase
 # pandora port - notaz
-# respberry pi - DPR
+# raspberry pi - DPR
 
 # Global definitions
 
@@ -17,16 +17,24 @@ BIN       = gpsp
 
 VPATH      += .. ../arm
 CFLAGS     += -DARM_ARCH -DRPI_BUILD -Wall
-CFLAGS     += -O3 -mfpu=vfp
-CFLAGS     += `sdl-config --cflags`
+CFLAGS	   += -Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s -fgnu89-inline
 CFLAGS     += -I$(SDKSTAGE)/opt/vc/include -I$(SDKSTAGE)/opt/vc/include/interface/vcos/pthreads
 CFLAGS     += -I$(SDKSTAGE)/opt/vc/include/interface/vmcs_host/linux
 
-# expecting to have PATH set up to get correct sdl-config first
-
-LIBS       += `sdl-config --libs`
 LIBS       += -ldl -lpthread -lz
 LIBS       += -L$(SDKSTAGE)/opt/vc/lib/ -lGLESv2 -lEGL -lopenmaxil -lbcm_host -lvcos -lvchiq_arm  -lrt
+
+# Dependencies
+ifeq ($(origin SDL_CFLAGS) $(origin SDL_LDLIBS), undefined undefined)
+  SDL_CONFIG ?= sdl-config
+  ifeq ($(shell which $(SDL_CONFIG) 2>/dev/null),)
+    $(error No SDL development libraries found!)
+  endif
+  SDL_CFLAGS += $(shell $(SDL_CONFIG) --cflags)
+  SDL_LIBS += $(shell $(SDL_CONFIG) --libs)
+endif
+CFLAGS += $(SDL_CFLAGS)
+LIBS += $(SDL_LIBS)
 
 # Compilation:
 

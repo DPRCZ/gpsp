@@ -39,7 +39,7 @@ debug_state current_debug_state = RUN;
 //u32 breakpoint_value = 0;
 
 #ifdef RPI_BUILD
-frameskip_type current_frameskip_type = manual_frameskip; //manual; //auto_frameskip;
+frameskip_type current_frameskip_type = auto_frameskip; //manual; //auto_frameskip;
 u32 global_cycles_per_instruction = 1;
 #else
 frameskip_type current_frameskip_type = auto_frameskip;

@@ -889,7 +889,7 @@ s32 load_game_config_file()
     return 0;
 
 #ifdef RPI_BUILD
-  current_frameskip_type = manual_frameskip;
+  current_frameskip_type = auto_frameskip;
   frameskip_value = 1;
 #else
   current_frameskip_type = auto_frameskip;

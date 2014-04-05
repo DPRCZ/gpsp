@@ -17,7 +17,7 @@ BIN       = gpsp
 
 VPATH      += .. ../arm
 CFLAGS     += -DARM_ARCH -DRPI_BUILD -Wall
-CFLAGS	   += -Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s -fgnu89-inline
+CFLAGS	   += -Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6j -fgnu89-inline
 CFLAGS     += -I$(SDKSTAGE)/opt/vc/include -I$(SDKSTAGE)/opt/vc/include/interface/vcos/pthreads
 CFLAGS     += -I$(SDKSTAGE)/opt/vc/include/interface/vmcs_host/linux
 

@@ -297,6 +297,9 @@ void video_init(uint32_t _width, uint32_t _height, uint32_t filter)
 	dst_rect.width = screen_width;
 	dst_rect.height = screen_height;
 
+	screen_width = (480 * screen_width) / screen_height;
+	screen_height = 480;
+
 	VC_RECT_T src_rect;
 	src_rect.x = 0;
 	src_rect.y = 0;

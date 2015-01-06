@@ -1013,6 +1013,12 @@ u32 update_input()
 
       return ret_val;
   }
+  
+  // Quit if SELECT + START is pressed
+  if ((menu_hotkey) && ( newkey == (BUTTON_SELECT | BUTTON_START))) {
+      newkey &= ~(BUTTON_SELECT | BUTTON_START);
+      quit();
+  }
 
   if (key != newkey) {
      key = newkey;

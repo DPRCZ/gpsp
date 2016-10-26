@@ -4368,7 +4368,6 @@ void execute_arm(u32 cycles)
   u32 cycles_per_instruction = global_cycles_per_instruction;
   cpu_alert_type cpu_alert;
 
-  u32 old_pc;
 
   if(pc_address_block == NULL)
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);
@@ -4390,7 +4389,6 @@ void execute_arm(u32 cycles)
       step_debug(pc, cycles_remaining);
       cycles_per_instruction = global_cycles_per_instruction;
 
-      old_pc = pc;
       execute_arm_instruction();
       cycles_remaining -= cycles_per_instruction;
     } while(cycles_remaining > 0);
@@ -4406,7 +4404,6 @@ void execute_arm(u32 cycles)
       collapse_flags();
       step_debug(pc, cycles_remaining);
 
-      old_pc = pc;
       execute_thumb_instruction();
       cycles_remaining -= cycles_per_instruction;
     } while(cycles_remaining > 0);
